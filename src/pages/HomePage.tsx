@@ -7,7 +7,6 @@ import {
   Clock,
   FileText,
   PlusCircle,
-  Search,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -23,25 +22,14 @@ import { estadoBadgeStyles } from '@/lib/reportes-ui'
 import { cn } from '@/lib/utils'
 
 const toneStyles = {
-  primary: { bg: 'bg-primary/10', fg: 'text-primary', ring: 'ring-primary/15' },
-  brand: {
-    bg: 'bg-[oklch(0.96_0.06_75)]',
-    fg: 'text-[oklch(0.5_0.13_60)]',
-    ring: 'ring-[oklch(0.85_0.1_70)]',
-  },
-  success: {
-    bg: 'bg-[oklch(0.95_0.06_155)]',
-    fg: 'text-[oklch(0.42_0.13_155)]',
-    ring: 'ring-[oklch(0.85_0.08_155)]',
-  },
+  primary: { bg: 'bg-primary/8', fg: 'text-primary', border: 'border-primary/20' },
+  brand: { bg: 'bg-[oklch(0.96_0.06_75)]', fg: 'text-[oklch(0.5_0.13_60)]', border: 'border-[oklch(0.85_0.1_70)]' },
+  success: { bg: 'bg-[oklch(0.95_0.06_155)]', fg: 'text-[oklch(0.42_0.13_155)]', border: 'border-[oklch(0.85_0.08_155)]' },
 } as const
 
 function formatFechaHoy() {
   const fmt = new Intl.DateTimeFormat('es-AR', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
+    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
   })
   const formatted = fmt.format(new Date())
   return formatted.charAt(0).toUpperCase() + formatted.slice(1)
@@ -63,119 +51,54 @@ export default function HomePage() {
   const ultimos = reportes.slice(0, 4)
 
   const resumen = [
-    {
-      label: 'Reportes enviados',
-      value: total,
-      description: 'Total histórico',
-      icon: FileText,
-      tone: 'primary' as const,
-    },
-    {
-      label: 'En revisión',
-      value: enRevision,
-      description: 'El equipo los está atendiendo',
-      icon: Clock,
-      tone: 'brand' as const,
-    },
-    {
-      label: 'Resueltos',
-      value: resueltos,
-      description: 'Gracias por colaborar',
-      icon: CheckCircle2,
-      tone: 'success' as const,
-    },
+    { label: 'Reportes enviados', value: total, description: 'Total histórico', icon: FileText, tone: 'primary' as const },
+    { label: 'En revisión', value: enRevision, description: 'El equipo los está atendiendo', icon: Clock, tone: 'brand' as const },
+    { label: 'Resueltos', value: resueltos, description: 'Gracias por colaborar', icon: CheckCircle2, tone: 'success' as const },
   ]
 
   return (
-    <>
-      <section
-        className="animate-fade-up rounded-3xl bg-gradient-to-br from-primary/8 via-background to-background p-8 ring-1 ring-primary/10"
-        aria-labelledby="welcome-title"
-      >
-        <p className="text-sm font-medium tracking-wide text-muted-foreground">
-          {formatFechaHoy()}
-        </p>
-        <h1
-          id="welcome-title"
-          className="mt-2 font-heading text-4xl font-semibold tracking-tight text-foreground sm:text-5xl"
-        >
+    <div className="flex flex-col gap-8">
+      {/* Hero */}
+      <section className="animate-fade-up rounded-xl border border-border bg-card p-6">
+        <p className="text-xs font-medium text-muted-foreground">{formatFechaHoy()}</p>
+        <h1 className="mt-1.5 font-heading text-2xl font-semibold tracking-tight text-foreground">
           Bienvenido, <span className="text-primary">{firstName}</span>
         </h1>
-        <p className="mt-3 max-w-2xl text-lg leading-relaxed text-muted-foreground">
-          Reportá problemas en tu barrio de forma simple y segura. Ayudanos a
-          mantener Villa María en buen estado.
+        <p className="mt-1.5 max-w-xl text-sm text-muted-foreground">
+          Reportá problemas en tu barrio de forma simple. Ayudanos a mantener Villa María en buen estado.
         </p>
-
-        <div className="mt-6 flex flex-wrap items-center gap-3">
-          <Button
-            size="lg"
-            render={<Link to="/reportes/nuevo" />}
-            className="h-12 rounded-xl bg-brand px-5 text-base font-semibold text-brand-foreground shadow-sm ring-1 ring-[oklch(0.55_0.13_55)]/20 hover:bg-[oklch(0.62_0.14_60)] hover:shadow-md focus-visible:ring-[oklch(0.68_0.13_60)]/40"
-          >
-            <PlusCircle className="size-5" aria-hidden />
-            Crear nuevo reporte
+        <div className="mt-4 flex items-center gap-2">
+          <Button size="sm" render={<Link to="/reportes/nuevo" />} className="bg-brand text-brand-foreground hover:bg-[oklch(0.62_0.14_60)]">
+            <PlusCircle className="size-3.5" aria-hidden />
+            Nuevo reporte
           </Button>
-          <Button
-            size="lg"
-            variant="outline"
-            render={<Link to="/reportes" />}
-            className="h-12 rounded-xl px-5 text-base font-semibold"
-          >
-            <Search className="size-5" aria-hidden />
+          <Button size="sm" variant="outline" render={<Link to="/reportes" />}>
             Ver mis reportes
           </Button>
         </div>
       </section>
 
-      <section
-        className="mt-10 animate-fade-up [animation-delay:80ms]"
-        aria-labelledby="resumen-title"
-      >
-        <div className="mb-4 flex items-end justify-between">
-          <h2
-            id="resumen-title"
-            className="font-heading text-2xl font-semibold tracking-tight"
-          >
-            Resumen
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            Estado actual de tus reportes
-          </p>
+      {/* Stats */}
+      <section className="animate-fade-up [animation-delay:60ms]" aria-labelledby="resumen-title">
+        <div className="mb-3 flex items-center justify-between">
+          <h2 id="resumen-title" className="text-sm font-semibold text-foreground">Resumen</h2>
+          <span className="text-xs text-muted-foreground">Estado actual de tus reportes</span>
         </div>
-
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           {resumen.map((item) => {
             const Icon = item.icon
             const tone = toneStyles[item.tone]
             return (
-              <Card
-                key={item.label}
-                className="border-0 ring-1 ring-border transition-all hover:-translate-y-0.5 hover:shadow-md hover:ring-primary/20"
-              >
-                <CardHeader className="flex flex-row items-start justify-between gap-4">
-                  <div>
-                    <CardDescription className="text-sm font-medium text-muted-foreground">
-                      {item.label}
-                    </CardDescription>
-                    <CardTitle className="mt-2 font-heading text-4xl font-semibold tracking-tight text-foreground">
-                      {item.value}
-                    </CardTitle>
-                  </div>
-                  <span
-                    className={cn(
-                      'grid size-12 place-items-center rounded-xl ring-1',
-                      tone.bg,
-                      tone.fg,
-                      tone.ring
-                    )}
-                  >
-                    <Icon className="size-6" aria-hidden />
+              <Card key={item.label} className="border border-border shadow-none">
+                <CardHeader className="flex flex-row items-center justify-between gap-3 pb-2">
+                  <CardDescription className="text-xs font-medium">{item.label}</CardDescription>
+                  <span className={cn('grid size-7 place-items-center rounded-md border', tone.bg, tone.fg, tone.border)}>
+                    <Icon className="size-3.5" aria-hidden />
                   </span>
                 </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">
-                    {item.description}
-                  </p>
+                <CardContent className="pt-0">
+                  <CardTitle className="font-heading text-2xl font-semibold">{item.value}</CardTitle>
+                  <p className="mt-0.5 text-xs text-muted-foreground">{item.description}</p>
                 </CardContent>
               </Card>
             )
@@ -183,70 +106,42 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section
-        className="mt-12 animate-fade-up [animation-delay:160ms]"
-        aria-labelledby="reportes-title"
-      >
-        <div className="mb-4 flex items-end justify-between gap-3">
+      {/* Últimos reportes */}
+      <section className="animate-fade-up [animation-delay:120ms]" aria-labelledby="reportes-title">
+        <div className="mb-3 flex items-center justify-between">
           <div>
-            <h2
-              id="reportes-title"
-              className="font-heading text-2xl font-semibold tracking-tight"
-            >
-              Últimos reportes
-            </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Tus reportes más recientes y su estado
-            </p>
+            <h2 id="reportes-title" className="text-sm font-semibold text-foreground">Últimos reportes</h2>
+            <p className="text-xs text-muted-foreground">Tus reportes más recientes</p>
           </div>
-          <Button
-            variant="ghost"
-            render={<Link to="/reportes" />}
-            className="h-10 rounded-lg text-sm font-semibold text-primary hover:bg-primary/10"
-          >
+          <Button variant="ghost" size="sm" render={<Link to="/reportes" />} className="text-xs text-primary hover:bg-primary/8 h-7 px-2">
             Ver todos
-            <ArrowRight className="size-4" aria-hidden />
+            <ArrowRight className="size-3" aria-hidden />
           </Button>
         </div>
 
-        <Card className="overflow-hidden border-0 ring-1 ring-border">
+        <Card className="border border-border shadow-none">
           <ul className="divide-y divide-border">
             {ultimos.map((reporte) => (
               <li
                 key={reporte.id}
-                className="flex flex-col gap-4 px-5 py-5 transition-colors hover:bg-muted/40 sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:px-6"
+                className="flex items-center justify-between gap-4 px-4 py-3 transition-colors hover:bg-muted/40"
               >
-                <div className="flex items-start gap-4">
-                  <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-muted text-foreground/70 ring-1 ring-border">
-                    <ClipboardList className="size-5" aria-hidden />
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-muted text-foreground/60">
+                    <ClipboardList className="size-4" aria-hidden />
                   </span>
                   <div className="min-w-0">
-                    <p className="text-base font-semibold leading-snug text-foreground sm:text-lg">
-                      {reporte.titulo}
-                    </p>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      Reportado el {reporte.fecha}
-                    </p>
+                    <p className="truncate text-sm font-medium text-foreground">{reporte.titulo}</p>
+                    <p className="text-xs text-muted-foreground">{reporte.fecha}</p>
                   </div>
                 </div>
-
-                <div className="flex items-center gap-3 sm:gap-4">
-                  <Badge
-                    className={cn(
-                      'h-7 rounded-full border-0 px-3 text-sm font-semibold',
-                      estadoBadgeStyles[reporte.estado]
-                    )}
-                  >
+                <div className="flex shrink-0 items-center gap-2">
+                  <Badge className={cn('h-5 rounded-full border-0 px-2 text-xs font-medium', estadoBadgeStyles[reporte.estado])}>
                     {reporte.estado}
                   </Badge>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    render={<Link to={`/reportes/${reporte.id}`} />}
-                    className="h-10 rounded-lg px-4 text-sm font-semibold"
-                  >
-                    Ver detalle
-                    <ArrowRight className="size-4" aria-hidden />
+                  <Button size="sm" variant="outline" render={<Link to={`/reportes/${reporte.id}`} />} className="h-7 px-2 text-xs">
+                    Ver
+                    <ArrowRight className="size-3" aria-hidden />
                   </Button>
                 </div>
               </li>
@@ -254,6 +149,6 @@ export default function HomePage() {
           </ul>
         </Card>
       </section>
-    </>
+    </div>
   )
 }

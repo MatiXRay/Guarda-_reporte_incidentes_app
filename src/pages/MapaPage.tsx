@@ -4,30 +4,21 @@ import { Card, CardContent } from '@/components/ui/card'
 export default function MapaPage() {
   return (
     <div className="animate-fade-up">
-      <header className="mb-6">
-        <p className="text-sm font-medium tracking-wide text-muted-foreground">
-          Mapa
-        </p>
-        <h1 className="mt-1 font-heading text-3xl font-semibold tracking-tight sm:text-4xl">
+      <div className="mb-4">
+        <h1 className="font-heading text-xl font-semibold tracking-tight text-foreground">
           Mapa de incidentes
         </h1>
-        <p className="mt-2 max-w-xl text-base text-muted-foreground">
-          Visualizá los reportes de tu zona y de toda Villa María en un solo
-          lugar.
+        <p className="mt-0.5 text-sm text-muted-foreground">
+          Visualizá los reportes de tu zona y de toda Villa María.
         </p>
-      </header>
+      </div>
 
-      <Card className="border-0 ring-1 ring-border">
-        <CardContent className="flex flex-col items-center justify-center gap-3 px-6 py-20 text-center">
-          <span className="grid size-14 place-items-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/15">
-            <Map className="size-7" aria-hidden />
-          </span>
-          <p className="text-lg font-semibold text-foreground">
-            Próximamente
-          </p>
-          <p className="max-w-md text-sm text-muted-foreground">
-            Estamos integrando el mapa interactivo con todos los reportes
-            públicos de la ciudad. Pronto vas a poder verlos acá.
+      <Card className="border border-border shadow-none">
+        <CardContent className="flex flex-col items-center justify-center gap-2 py-16 text-center">
+          <Map className="size-8 text-muted-foreground" aria-hidden />
+          <p className="text-sm font-semibold text-foreground">Próximamente</p>
+          <p className="max-w-sm text-xs text-muted-foreground">
+            Estamos integrando el mapa interactivo con todos los reportes públicos de la ciudad.
           </p>
         </CardContent>
       </Card>

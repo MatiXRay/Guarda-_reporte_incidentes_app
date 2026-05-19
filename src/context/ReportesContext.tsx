@@ -18,6 +18,9 @@ export type Reporte = {
   fecha: string
   estado: EstadoReporte
   autorId: string
+  lat: number | null
+  lng: number | null
+  imageUrl: string | null
 }
 
 const CURRENT_USER_ID = 'me'
@@ -33,6 +36,9 @@ const seed: Reporte[] = [
     fecha: '05/05/2025',
     estado: 'Pendiente',
     autorId: CURRENT_USER_ID,
+    lat: -31.4135,
+    lng: -64.1811,
+    imageUrl: null,
   },
   {
     id: 2,
@@ -44,6 +50,9 @@ const seed: Reporte[] = [
     fecha: '03/05/2025',
     estado: 'En revisión',
     autorId: CURRENT_USER_ID,
+    lat: null,
+    lng: null,
+    imageUrl: null,
   },
   {
     id: 3,
@@ -55,6 +64,9 @@ const seed: Reporte[] = [
     fecha: '01/05/2025',
     estado: 'Resuelto',
     autorId: CURRENT_USER_ID,
+    lat: null,
+    lng: null,
+    imageUrl: null,
   },
   {
     id: 4,
@@ -66,6 +78,9 @@ const seed: Reporte[] = [
     fecha: '28/04/2025',
     estado: 'Pendiente',
     autorId: CURRENT_USER_ID,
+    lat: null,
+    lng: null,
+    imageUrl: null,
   },
 ]
 
@@ -82,7 +97,7 @@ type ReportesContextValue = {
   reportes: Reporte[]
   getReporte: (id: number) => Reporte | undefined
   createReporte: (
-    data: Omit<Reporte, 'id' | 'fecha' | 'estado' | 'autorId'>
+    data: Omit<Reporte, 'id' | 'fecha' | 'estado' | 'autorId' | 'ubicacion'> & { address: string }
   ) => Reporte
   updateReporte: (
     id: number,
@@ -111,9 +126,10 @@ export function ReportesProvider({ children }: { children: ReactNode }) {
   )
 
   const createReporte: ReportesContextValue['createReporte'] = useCallback(
-    (data) => {
+    ({ address, ...data }) => {
       const nuevo: Reporte = {
         ...data,
+        ubicacion: address,
         id: Date.now(),
         fecha: todayFormatted(),
         estado: 'Pendiente',

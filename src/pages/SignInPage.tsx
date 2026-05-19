@@ -23,7 +23,7 @@ export default function SignInPage() {
       </div>
 
       {/* ── Auth panel ── */}
-      <div className="flex-1 flex flex-col justify-center items-center px-4 py-10 md:py-0 bg-background">
+      <div className="flex-1 flex fvlex-col justify-center items-center px-4 py-10 md:py-0 bg-background">
         <Card className="w-full max-w-105 border-0 shadow-none bg-transparent ring-0">
           <CardContent className="px-0 flex flex-col items-center gap-6">
             {/* Header text above Clerk widget */}

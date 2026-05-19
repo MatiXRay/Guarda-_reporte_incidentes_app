@@ -38,7 +38,7 @@ export function UserRoleProvider({ children }: { children: React.ReactNode }) {
     }
 
     // El backend verifica el token, maneja el user en MongoDB y devuelve el rol
-    apiFetch(`${import.meta.env.VITE_API_URL}/auth/sync`, { method: 'POST' })
+    apiFetch(`${import.meta.env.VITE_API_URL}/api/auth/sync`, { method: 'POST' })
       .then((res) => res.json())
       .then((data) => setRole(data.role))
       .catch(() => setRole(null))

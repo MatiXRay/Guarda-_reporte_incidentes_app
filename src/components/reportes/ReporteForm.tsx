@@ -5,12 +5,17 @@ import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { CATEGORIAS } from '@/context/ReportesContext'
 import { cn } from '@/lib/utils'
+import { MapPicker, type PickedLocation } from './MapPicker'
+import { ImageUpload } from './ImageUpload'
 
 export type ReporteFormValues = {
   titulo: string
   categoria: string
-  ubicacion: string
   descripcion: string
+  address: string
+  lat: number | null
+  lng: number | null
+  imageUrl: string | null
 }
 
 type Props = {
@@ -24,42 +29,32 @@ type Props = {
 const empty: ReporteFormValues = {
   titulo: '',
   categoria: CATEGORIAS[0],
-  ubicacion: '',
   descripcion: '',
+  address: '',
+  lat: null,
+  lng: null,
+  imageUrl: null,
 }
 
-export function ReporteForm({
-  initialValues,
-  submitLabel,
-  submitIcon,
-  onSubmit,
-  onCancel,
-}: Props) {
-  const [values, setValues] = useState<ReporteFormValues>({
-    ...empty,
-    ...initialValues,
-  })
+export function ReporteForm({ initialValues, submitLabel, submitIcon, onSubmit, onCancel }: Props) {
+  const [values, setValues] = useState<ReporteFormValues>({ ...empty, ...initialValues })
   const [errors, setErrors] = useState<Partial<Record<keyof ReporteFormValues, string>>>({})
 
-  function setField<K extends keyof ReporteFormValues>(
-    key: K,
-    value: ReporteFormValues[K]
-  ) {
+  function setField<K extends keyof ReporteFormValues>(key: K, value: ReporteFormValues[K]) {
     setValues((prev) => ({ ...prev, [key]: value }))
     if (errors[key]) setErrors((prev) => ({ ...prev, [key]: undefined }))
   }
 
+  function handleLocationPick(loc: PickedLocation) {
+    setValues((prev) => ({ ...prev, lat: loc.lat, lng: loc.lng, address: loc.address }))
+    if (errors.address) setErrors((prev) => ({ ...prev, address: undefined }))
+  }
+
   function validate(): boolean {
     const next: typeof errors = {}
-    if (values.titulo.trim().length < 3) {
-      next.titulo = 'Ingresá un título de al menos 3 caracteres.'
-    }
-    if (!values.ubicacion.trim()) {
-      next.ubicacion = 'Indicá la ubicación del incidente.'
-    }
-    if (values.descripcion.trim().length < 10) {
-      next.descripcion = 'Contanos un poco más, al menos 10 caracteres.'
-    }
+    if (values.titulo.trim().length < 3) next.titulo = 'Al menos 3 caracteres.'
+    if (!values.lat || !values.lng) next.address = 'Hacé clic en el mapa para marcar la ubicación.'
+    if (values.descripcion.trim().length < 10) next.descripcion = 'Al menos 10 caracteres.'
     setErrors(next)
     return Object.keys(next).length === 0
   }
@@ -70,19 +65,18 @@ export function ReporteForm({
     onSubmit({
       titulo: values.titulo.trim(),
       categoria: values.categoria,
-      ubicacion: values.ubicacion.trim(),
       descripcion: values.descripcion.trim(),
+      address: values.address,
+      lat: values.lat,
+      lng: values.lng,
+      imageUrl: values.imageUrl,
     })
   }
 
   return (
-    <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-6">
-      <Field
-        id="titulo"
-        label="Título del reporte"
-        hint="Resumí el problema en pocas palabras (ej: Bache en Av. Sabattini)."
-        error={errors.titulo}
-      >
+    <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
+      {/* Título */}
+      <Field id="titulo" label="Título" error={errors.titulo}>
         <Input
           id="titulo"
           value={values.titulo}
@@ -90,17 +84,14 @@ export function ReporteForm({
           placeholder="Bache en Av. Sabattini"
           aria-invalid={Boolean(errors.titulo)}
           autoComplete="off"
-          className="h-12 text-base"
+          className="h-9 text-sm"
           maxLength={80}
         />
       </Field>
 
-      <Field
-        id="categoria"
-        label="Categoría"
-        hint="Elegí la categoría que mejor describe el problema."
-      >
-        <div className="flex flex-wrap gap-2">
+      {/* Categoría */}
+      <Field id="categoria" label="Categoría">
+        <div className="flex flex-wrap gap-1.5">
           {CATEGORIAS.map((cat) => {
             const active = values.categoria === cat
             return (
@@ -110,11 +101,11 @@ export function ReporteForm({
                 onClick={() => setField('categoria', cat)}
                 aria-pressed={active}
                 className={cn(
-                  'h-11 rounded-full border px-4 text-sm font-semibold transition-colors outline-none',
-                  'focus-visible:ring-3 focus-visible:ring-ring/50',
+                  'h-7 rounded-full border px-3 text-xs font-medium transition-colors outline-none',
+                  'focus-visible:ring-2 focus-visible:ring-ring/50',
                   active
-                    ? 'border-primary bg-primary text-primary-foreground shadow-sm'
-                    : 'border-border bg-background text-foreground/80 hover:bg-muted'
+                    ? 'border-primary bg-primary text-primary-foreground'
+                    : 'border-border bg-background text-foreground/70 hover:bg-muted hover:text-foreground'
                 )}
               >
                 {cat}
@@ -124,56 +115,40 @@ export function ReporteForm({
         </div>
       </Field>
 
-      <Field
-        id="ubicacion"
-        label="Ubicación"
-        hint="Calle, altura, esquina o referencia."
-        error={errors.ubicacion}
-      >
-        <Input
-          id="ubicacion"
-          value={values.ubicacion}
-          onChange={(e) => setField('ubicacion', e.target.value)}
-          placeholder="Ej: Av. Sabattini 1200"
-          aria-invalid={Boolean(errors.ubicacion)}
-          autoComplete="off"
-          className="h-12 text-base"
-          maxLength={120}
+      {/* Ubicación */}
+      <Field id="address" label="Ubicación" hint="Hacé clic en el mapa para marcar el lugar." error={errors.address}>
+        <MapPicker
+          value={values.lat !== null && values.lng !== null ? { lat: values.lat, lng: values.lng, address: values.address } : null}
+          onChange={handleLocationPick}
         />
+        {values.address && (
+          <p className="mt-1 truncate text-xs text-muted-foreground">📍 {values.address}</p>
+        )}
       </Field>
 
-      <Field
-        id="descripcion"
-        label="Descripción"
-        hint="Contanos qué viste, cuándo, y cualquier detalle que ayude."
-        error={errors.descripcion}
-      >
+      {/* Descripción */}
+      <Field id="descripcion" label="Descripción" hint="Contanos qué viste y cuándo." error={errors.descripcion}>
         <Textarea
           id="descripcion"
           value={values.descripcion}
           onChange={(e) => setField('descripcion', e.target.value)}
           placeholder="Describí el incidente con tus palabras"
           aria-invalid={Boolean(errors.descripcion)}
-          className="min-h-32 text-base"
+          className="min-h-24 text-sm"
           maxLength={1000}
         />
       </Field>
 
-      <div className="flex flex-col-reverse gap-3 border-t border-border pt-6 sm:flex-row sm:justify-end">
-        <Button
-          type="button"
-          variant="outline"
-          size="lg"
-          onClick={onCancel}
-          className="h-12 rounded-xl px-5 text-base font-semibold"
-        >
+      {/* Imagen */}
+      <Field id="imageUrl" label="Foto del incidente" hint="Opcional.">
+        <ImageUpload value={values.imageUrl} onChange={(url) => setField('imageUrl', url)} />
+      </Field>
+
+      <div className="flex justify-end gap-2 border-t border-border pt-4">
+        <Button type="button" variant="outline" size="sm" onClick={onCancel}>
           Cancelar
         </Button>
-        <Button
-          type="submit"
-          size="lg"
-          className="h-12 rounded-xl bg-brand px-5 text-base font-semibold text-brand-foreground shadow-sm hover:bg-[oklch(0.62_0.14_60)]"
-        >
+        <Button type="submit" size="sm" className="bg-brand text-brand-foreground hover:bg-[oklch(0.62_0.14_60)]">
           {submitIcon}
           {submitLabel}
         </Button>
@@ -183,36 +158,16 @@ export function ReporteForm({
 }
 
 function Field({
-  id,
-  label,
-  hint,
-  error,
-  children,
+  id, label, hint, error, children,
 }: {
-  id: string
-  label: string
-  hint?: string
-  error?: string
-  children: ReactNode
+  id: string; label: string; hint?: string; error?: string; children: ReactNode
 }) {
-  const hintId = `${id}-hint`
-  const errorId = `${id}-error`
   return (
-    <div className="flex flex-col gap-2">
-      <Label htmlFor={id} className="text-base font-semibold text-foreground">
-        {label}
-      </Label>
+    <div className="flex flex-col gap-1.5">
+      <Label htmlFor={id} className="text-sm font-medium text-foreground">{label}</Label>
       {children}
-      {hint && !error && (
-        <p id={hintId} className="text-sm text-muted-foreground">
-          {hint}
-        </p>
-      )}
-      {error && (
-        <p id={errorId} className="text-sm font-medium text-destructive">
-          {error}
-        </p>
-      )}
+      {hint && !error && <p className="text-xs text-muted-foreground">{hint}</p>}
+      {error && <p className="text-xs font-medium text-destructive">{error}</p>}
     </div>
   )
 }
