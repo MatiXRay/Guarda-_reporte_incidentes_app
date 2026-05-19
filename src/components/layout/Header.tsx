@@ -33,10 +33,6 @@ export function Header() {
         </Link>
 
         <div className="flex items-center gap-3">
-          <span className="hidden text-sm text-muted-foreground sm:block">
-            {displayName}
-          </span>
-
           <Button
             size="sm"
             render={<Link to="/reportes/nuevo" />}
@@ -46,13 +42,18 @@ export function Header() {
             Nuevo Reporte
           </Button>
 
-          <UserButton
-            appearance={{
-              elements: {
-                avatarBox: 'h-8 w-8 rounded-full ring-1 ring-border',
-              },
-            }}
-          />
+          <div className="flex items-center gap-2">
+            <UserButton
+              appearance={{
+                elements: {
+                  avatarBox: 'h-8 w-8 rounded-full',
+                },
+              }}
+            />
+            <span className="hidden text-sm text-muted-foreground sm:block">
+              {displayName}
+            </span>
+          </div>
         </div>
       </div>
     </header>

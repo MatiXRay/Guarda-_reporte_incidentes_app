@@ -1,4 +1,5 @@
-import { NavLink } from 'react-router-dom'
+import { useState } from 'react'
+import { NavLink, useLocation } from 'react-router-dom'
 import {
   Home,
   ClipboardList,
@@ -6,6 +7,7 @@ import {
   Map,
   Settings,
   HelpCircle,
+  ChevronRight,
   type LucideIcon,
 } from 'lucide-react'
 import { Separator } from '@/components/ui/separator'
@@ -18,16 +20,14 @@ type NavItem = {
   end?: boolean
 }
 
-const primaryNav: NavItem[] = [
-  { label: 'Inicio', icon: Home, to: '/dashboard', end: true },
-  { label: 'Mis Reportes', icon: ClipboardList, to: '/reportes' },
-  { label: 'Nuevo Reporte', icon: PlusCircle, to: '/reportes/nuevo' },
-  { label: 'Mapa', icon: Map, to: '/mapa' },
-]
-
 const secondaryNav: NavItem[] = [
   { label: 'Configuración', icon: Settings, to: '/configuracion' },
   { label: 'Ayuda', icon: HelpCircle, to: '/ayuda' },
+]
+
+const reportesSubNav: NavItem[] = [
+  { label: 'Mis Reportes', icon: ClipboardList, to: '/reportes', end: true },
+  { label: 'Nuevo Reporte', icon: PlusCircle, to: '/reportes/nuevo' },
 ]
 
 function SidebarLink({ item }: { item: NavItem }) {
@@ -62,6 +62,55 @@ function SidebarLink({ item }: { item: NavItem }) {
   )
 }
 
+function ReportesSection() {
+  const location = useLocation()
+  const isInReportes = location.pathname.startsWith('/reportes')
+  const [open, setOpen] = useState(isInReportes)
+
+  return (
+    <li>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className={cn(
+          'group flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm font-medium transition-colors outline-none',
+          'focus-visible:ring-2 focus-visible:ring-ring/50',
+          isInReportes
+            ? 'text-primary'
+            : 'text-foreground/70 hover:bg-muted hover:text-foreground'
+        )}
+      >
+        <ClipboardList
+          className={cn(
+            'size-4 shrink-0 transition-colors',
+            isInReportes ? 'text-primary' : 'text-foreground/50 group-hover:text-foreground'
+          )}
+          aria-hidden
+        />
+        <span className="flex-1 text-left">Reportes</span>
+        <ChevronRight
+          className={cn(
+            'size-3.5 shrink-0 transition-transform duration-200',
+            open && 'rotate-90'
+          )}
+          aria-hidden
+        />
+      </button>
+
+      {open && (
+        <ul className="mt-0.5 flex flex-col gap-0.5 pl-4">
+          {reportesSubNav.map((item) => (
+            <li key={item.label}>
+              <SidebarLink item={item} />
+            </li>
+          ))}
+        </ul>
+      )}
+    </li>
+  )
+}
+
 export function Sidebar() {
   return (
     <aside
@@ -73,11 +122,13 @@ export function Sidebar() {
           Menú
         </p>
         <ul className="flex flex-col gap-0.5">
-          {primaryNav.map((item) => (
-            <li key={item.label}>
-              <SidebarLink item={item} />
-            </li>
-          ))}
+          <li>
+            <SidebarLink item={{ label: 'Inicio', icon: Home, to: '/dashboard', end: true }} />
+          </li>
+          <ReportesSection />
+          <li>
+            <SidebarLink item={{ label: 'Mapa', icon: Map, to: '/mapa' }} />
+          </li>
         </ul>
 
         <Separator className="my-3" />

@@ -1,5 +1,5 @@
 import { Link, Navigate, useParams } from 'react-router-dom'
-import { ArrowLeft, CalendarDays, ClipboardList, Lock, MapPin, Pencil, Tag } from 'lucide-react'
+import { ArrowLeft, CalendarDays, ClipboardList, Film, Lock, MapPin, Pencil, Tag } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -64,18 +64,41 @@ export default function ReporteDetallePage() {
             </p>
           </div>
 
-          {reporte.imageUrl && (
+          {reporte.mediaUrls.length > 0 && (
             <>
               <Separator className="my-4" />
               <div>
                 <p className="mb-2 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
-                  Foto
+                  Multimedia
                 </p>
-                <img
-                  src={reporte.imageUrl}
-                  alt="Foto del incidente"
-                  className="max-h-64 w-full rounded-lg object-cover"
-                />
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                  {reporte.mediaUrls.map((url) => {
+                    const isVideo = url.includes('/video/upload/') || /\.(mp4|mov|webm)(\?|$)/i.test(url)
+                    return (
+                      <div key={url} className="relative overflow-hidden rounded-lg border border-border bg-muted">
+                        {isVideo ? (
+                          <>
+                            <video
+                              src={url}
+                              controls
+                              className="aspect-video w-full object-cover"
+                            />
+                            <span className="absolute left-1.5 top-1.5 flex items-center gap-0.5 rounded bg-black/60 px-1.5 py-0.5 text-[10px] text-white">
+                              <Film className="size-2.5" aria-hidden />
+                              Video
+                            </span>
+                          </>
+                        ) : (
+                          <img
+                            src={url}
+                            alt="Foto del incidente"
+                            className="aspect-video w-full object-cover"
+                          />
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
               </div>
             </>
           )}

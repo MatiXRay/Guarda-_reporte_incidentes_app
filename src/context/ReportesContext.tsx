@@ -20,7 +20,7 @@ export type Reporte = {
   autorId: string
   lat: number | null
   lng: number | null
-  imageUrl: string | null
+  mediaUrls: string[]
 }
 
 const CURRENT_USER_ID = 'me'
@@ -36,9 +36,9 @@ const seed: Reporte[] = [
     fecha: '05/05/2025',
     estado: 'Pendiente',
     autorId: CURRENT_USER_ID,
-    lat: -31.4135,
-    lng: -64.1811,
-    imageUrl: null,
+    lat: -32.4073,
+    lng: -63.2387,
+    mediaUrls: [],
   },
   {
     id: 2,
@@ -52,7 +52,7 @@ const seed: Reporte[] = [
     autorId: CURRENT_USER_ID,
     lat: null,
     lng: null,
-    imageUrl: null,
+    mediaUrls: [],
   },
   {
     id: 3,
@@ -66,7 +66,7 @@ const seed: Reporte[] = [
     autorId: CURRENT_USER_ID,
     lat: null,
     lng: null,
-    imageUrl: null,
+    mediaUrls: [],
   },
   {
     id: 4,
@@ -80,7 +80,7 @@ const seed: Reporte[] = [
     autorId: CURRENT_USER_ID,
     lat: null,
     lng: null,
-    imageUrl: null,
+    mediaUrls: [],
   },
 ]
 
@@ -101,7 +101,7 @@ type ReportesContextValue = {
   ) => Reporte
   updateReporte: (
     id: number,
-    data: Partial<Omit<Reporte, 'id' | 'autorId' | 'estado' | 'fecha'>>
+    data: Partial<Omit<Reporte, 'id' | 'autorId' | 'estado' | 'fecha'>> & { ubicacion?: string }
   ) => Reporte | undefined
   deleteReporte: (id: number) => void
   canEdit: (reporte: Reporte) => boolean

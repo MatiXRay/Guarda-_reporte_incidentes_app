@@ -17,7 +17,7 @@ export default function NuevoReportePage() {
       address: values.address,
       lat: values.lat,
       lng: values.lng,
-      imageUrl: values.imageUrl,
+      mediaUrls: values.mediaUrls,
     })
     navigate(`/reportes/${nuevo.id}`, { replace: true })
   }

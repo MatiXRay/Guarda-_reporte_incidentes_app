@@ -52,7 +52,7 @@ export default function EditarReportePage() {
       ubicacion: values.address,
       lat: values.lat,
       lng: values.lng,
-      imageUrl: values.imageUrl,
+      mediaUrls: values.mediaUrls,
     })
     navigate(`/reportes/${reporte.id}`, { replace: true })
   }
@@ -88,7 +88,7 @@ export default function EditarReportePage() {
               descripcion: reporte.descripcion,
               lat: reporte.lat,
               lng: reporte.lng,
-              imageUrl: reporte.imageUrl,
+              mediaUrls: reporte.mediaUrls,
             }}
             submitLabel="Guardar cambios"
             submitIcon={<Save className="size-3.5" aria-hidden />}

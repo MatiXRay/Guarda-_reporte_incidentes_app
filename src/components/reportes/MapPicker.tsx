@@ -1,9 +1,10 @@
-import { useEffect, useRef } from 'react'
-import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet'
+import { useEffect, useState } from 'react'
+import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+import { Search, Loader2 } from 'lucide-react'
+import { Input } from '@/components/ui/input'
 
-// Fix leaflet default marker icons with vite
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
 import markerIcon from 'leaflet/dist/images/marker-icon.png'
 import markerShadow from 'leaflet/dist/images/marker-shadow.png'
@@ -26,9 +27,18 @@ type Props = {
   onChange: (loc: PickedLocation) => void
 }
 
-// Default center: Córdoba, Argentina
-const DEFAULT_CENTER: [number, number] = [-31.4135, -64.1811]
-const DEFAULT_ZOOM = 13
+// Villa María, Córdoba, Argentina
+const DEFAULT_CENTER: [number, number] = [-32.4073, -63.2387]
+const DEFAULT_ZOOM = 14
+
+// Bounding box covering Villa María and Villa Nueva
+const MAP_BOUNDS: [[number, number], [number, number]] = [
+  [-32.52, -63.40],
+  [-32.30, -63.10],
+]
+
+// Nominatim viewbox (lon_min,lat_min,lon_max,lat_max)
+const NOMINATIM_VIEWBOX = '-63.40,-32.52,-63.10,-32.30'
 
 async function reverseGeocode(lat: number, lng: number): Promise<string> {
   const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`
@@ -39,6 +49,42 @@ async function reverseGeocode(lat: number, lng: number): Promise<string> {
   } catch {
     return `${lat.toFixed(5)}, ${lng.toFixed(5)}`
   }
+}
+
+async function geocodeAddress(
+  query: string
+): Promise<{ lat: number; lng: number; display_name: string } | null> {
+  const params = new URLSearchParams({
+    format: 'jsonv2',
+    q: `${query}, Villa María, Córdoba, Argentina`,
+    viewbox: NOMINATIM_VIEWBOX,
+    bounded: '0',
+    limit: '1',
+    countrycodes: 'ar',
+    'accept-language': 'es',
+  })
+  try {
+    const res = await fetch(`https://nominatim.openstreetmap.org/search?${params}`)
+    const data = await res.json()
+    if (!data.length) return null
+    return {
+      lat: parseFloat(data[0].lat),
+      lng: parseFloat(data[0].lon),
+      display_name: data[0].display_name,
+    }
+  } catch {
+    return null
+  }
+}
+
+function FlyTo({ target }: { target: { lat: number; lng: number } | null }) {
+  const map = useMap()
+  useEffect(() => {
+    if (target) {
+      map.flyTo([target.lat, target.lng], 16, { duration: 1 })
+    }
+  }, [map, target])
+  return null
 }
 
 function ClickHandler({ onChange }: { onChange: (loc: PickedLocation) => void }) {
@@ -54,22 +100,72 @@ function ClickHandler({ onChange }: { onChange: (loc: PickedLocation) => void })
 
 export function MapPicker({ value, onChange }: Props) {
   const center: [number, number] = value ? [value.lat, value.lng] : DEFAULT_CENTER
+  const [query, setQuery] = useState('')
+  const [searching, setSearching] = useState(false)
+  const [searchError, setSearchError] = useState<string | null>(null)
+  const [flyTarget, setFlyTarget] = useState<{ lat: number; lng: number } | null>(null)
+
+  async function handleSearch() {
+    if (!query.trim()) return
+    setSearching(true)
+    setSearchError(null)
+    const result = await geocodeAddress(query.trim())
+    setSearching(false)
+    if (!result) {
+      setSearchError('No se encontró la dirección. Intentá con más detalle.')
+      return
+    }
+    setFlyTarget({ lat: result.lat, lng: result.lng })
+    onChange({ lat: result.lat, lng: result.lng, address: result.display_name })
+  }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border">
-      <MapContainer
-        center={center}
-        zoom={DEFAULT_ZOOM}
-        style={{ height: '280px', width: '100%' }}
-        scrollWheelZoom={false}
-      >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
-        <ClickHandler onChange={onChange} />
-        {value && <Marker position={[value.lat, value.lng]} />}
-      </MapContainer>
+    <div className="flex flex-col gap-2">
+      <div className="flex gap-2">
+        <div className="relative flex-1">
+          <Search
+            className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground"
+            aria-hidden
+          />
+          <Input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+            placeholder="Buscar dirección en Villa María…"
+            className="h-8 pl-8 text-sm"
+          />
+        </div>
+        <button
+          type="button"
+          onClick={handleSearch}
+          disabled={searching || !query.trim()}
+          className="flex h-8 items-center gap-1.5 rounded-md border border-border bg-background px-3 text-xs font-medium transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {searching ? <Loader2 className="size-3.5 animate-spin" /> : 'Buscar'}
+        </button>
+      </div>
+
+      {searchError && <p className="text-xs text-destructive">{searchError}</p>}
+
+      <div className="overflow-hidden rounded-xl border border-border">
+        <MapContainer
+          center={center}
+          zoom={DEFAULT_ZOOM}
+          style={{ height: '280px', width: '100%' }}
+          scrollWheelZoom={false}
+          maxBounds={MAP_BOUNDS}
+          maxBoundsViscosity={1.0}
+        >
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+          <FlyTo target={flyTarget} />
+          <ClickHandler onChange={onChange} />
+          {value && <Marker position={[value.lat, value.lng]} />}
+        </MapContainer>
+      </div>
     </div>
   )
 }

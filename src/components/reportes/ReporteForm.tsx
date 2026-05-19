@@ -15,7 +15,7 @@ export type ReporteFormValues = {
   address: string
   lat: number | null
   lng: number | null
-  imageUrl: string | null
+  mediaUrls: string[]
 }
 
 type Props = {
@@ -33,7 +33,7 @@ const empty: ReporteFormValues = {
   address: '',
   lat: null,
   lng: null,
-  imageUrl: null,
+  mediaUrls: [],
 }
 
 export function ReporteForm({ initialValues, submitLabel, submitIcon, onSubmit, onCancel }: Props) {
@@ -69,7 +69,7 @@ export function ReporteForm({ initialValues, submitLabel, submitIcon, onSubmit, 
       address: values.address,
       lat: values.lat,
       lng: values.lng,
-      imageUrl: values.imageUrl,
+      mediaUrls: values.mediaUrls,
     })
   }
 
@@ -139,9 +139,9 @@ export function ReporteForm({ initialValues, submitLabel, submitIcon, onSubmit, 
         />
       </Field>
 
-      {/* Imagen */}
-      <Field id="imageUrl" label="Foto del incidente" hint="Opcional.">
-        <ImageUpload value={values.imageUrl} onChange={(url) => setField('imageUrl', url)} />
+      {/* Multimedia */}
+      <Field id="mediaUrls" label="Fotos o video del incidente">
+        <ImageUpload value={values.mediaUrls} onChange={(urls) => setField('mediaUrls', urls)} />
       </Field>
 
       <div className="flex justify-end gap-2 border-t border-border pt-4">
