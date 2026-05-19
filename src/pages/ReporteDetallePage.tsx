@@ -1,13 +1,5 @@
 import { Link, Navigate, useParams } from 'react-router-dom'
-import {
-  ArrowLeft,
-  CalendarDays,
-  ClipboardList,
-  Lock,
-  MapPin,
-  Pencil,
-  Tag,
-} from 'lucide-react'
+import { ArrowLeft, CalendarDays, ClipboardList, Lock, MapPin, Pencil, Tag } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -21,102 +13,90 @@ export default function ReporteDetallePage() {
   const { getReporte, canEdit } = useReportes()
 
   const reporte = id ? getReporte(Number(id)) : undefined
-
-  if (!reporte) {
-    return <Navigate to="/reportes" replace />
-  }
+  if (!reporte) return <Navigate to="/reportes" replace />
 
   const editable = canEdit(reporte)
 
   return (
-    <article className="animate-fade-up mx-auto max-w-3xl">
+    <article className="animate-fade-up mx-auto max-w-2xl">
       <Button
         variant="ghost"
+        size="sm"
         render={<Link to="/reportes" />}
-        className="mb-4 h-10 rounded-lg px-3 text-sm font-semibold text-muted-foreground hover:text-foreground"
+        className="mb-3 h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
       >
-        <ArrowLeft className="size-4" aria-hidden />
-        Volver a mis reportes
+        <ArrowLeft className="size-3.5" aria-hidden />
+        Mis reportes
       </Button>
 
-      <Card className="border-0 ring-1 ring-border">
-        <CardContent className="p-6 sm:p-8">
+      <Card className="border border-border shadow-none">
+        <CardContent className="p-5">
           <div className="flex flex-wrap items-center gap-2">
-            <Badge
-              className={cn(
-                'h-7 rounded-full border-0 px-3 text-sm font-semibold',
-                estadoBadgeStyles[reporte.estado]
-              )}
-            >
+            <Badge className={cn('h-5 rounded-full border-0 px-2 text-xs font-medium', estadoBadgeStyles[reporte.estado])}>
               {reporte.estado}
             </Badge>
-            <span className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+            <span className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
               Reporte #{reporte.id}
             </span>
           </div>
 
-          <h1 className="mt-3 font-heading text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+          <h1 className="mt-2 font-heading text-xl font-semibold tracking-tight text-foreground">
             {reporte.titulo}
           </h1>
 
-          <Separator className="my-6" />
+          <Separator className="my-4" />
 
-          <dl className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+          <dl className="grid grid-cols-2 gap-4">
             <Detalle icon={Tag} label="Categoría" value={reporte.categoria} />
-            <Detalle
-              icon={MapPin}
-              label="Ubicación"
-              value={reporte.ubicacion}
-            />
-            <Detalle
-              icon={CalendarDays}
-              label="Fecha del reporte"
-              value={reporte.fecha}
-            />
-            <Detalle
-              icon={ClipboardList}
-              label="Estado"
-              value={reporte.estado}
-            />
+            <Detalle icon={MapPin} label="Ubicación" value={reporte.ubicacion} />
+            <Detalle icon={CalendarDays} label="Fecha" value={reporte.fecha} />
+            <Detalle icon={ClipboardList} label="Estado" value={reporte.estado} />
           </dl>
 
-          <Separator className="my-6" />
+          <Separator className="my-4" />
 
           <div>
-            <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+            <p className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
               Descripción
             </p>
-            <p className="mt-2 whitespace-pre-line text-base leading-relaxed text-foreground">
+            <p className="mt-1.5 whitespace-pre-line text-sm leading-relaxed text-foreground">
               {reporte.descripcion}
             </p>
           </div>
 
-          <Separator className="my-6" />
+          {reporte.imageUrl && (
+            <>
+              <Separator className="my-4" />
+              <div>
+                <p className="mb-2 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
+                  Foto
+                </p>
+                <img
+                  src={reporte.imageUrl}
+                  alt="Foto del incidente"
+                  className="max-h-64 w-full rounded-lg object-cover"
+                />
+              </div>
+            </>
+          )}
 
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <Separator className="my-4" />
+
+          <div className="flex items-center justify-between gap-3">
             {editable ? (
-              <p className="text-sm text-muted-foreground">
-                Este reporte está{' '}
-                <span className="font-semibold text-foreground">
-                  Pendiente
-                </span>
-                : aún podés modificarlo.
+              <p className="text-xs text-muted-foreground">
+                Estado <span className="font-medium text-foreground">Pendiente</span>: podés editarlo.
               </p>
             ) : (
-              <p className="inline-flex items-center gap-2 text-sm text-muted-foreground">
-                <Lock className="size-4" aria-hidden />
+              <p className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Lock className="size-3.5" aria-hidden />
                 Este reporte ya no se puede modificar.
               </p>
             )}
-
             {editable && (
-              <Button
-                size="lg"
-                render={<Link to={`/reportes/${reporte.id}/editar`} />}
-                className="h-12 rounded-xl px-5 text-base font-semibold"
-              >
-                <Pencil className="size-5" aria-hidden />
-                Editar reporte
+              <Button size="sm" render={<Link to={`/reportes/${reporte.id}/editar`} />} className="shrink-0">
+                <Pencil className="size-3.5" aria-hidden />
+                Editar
               </Button>
             )}
           </div>
@@ -126,27 +106,13 @@ export default function ReporteDetallePage() {
   )
 }
 
-function Detalle({
-  icon: Icon,
-  label,
-  value,
-}: {
-  icon: typeof Tag
-  label: string
-  value: string
-}) {
+function Detalle({ icon: Icon, label, value }: { icon: typeof Tag; label: string; value: string }) {
   return (
-    <div className="flex items-start gap-3">
-      <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-muted text-foreground/70 ring-1 ring-border">
-        <Icon className="size-4" aria-hidden />
-      </span>
+    <div className="flex items-start gap-2">
+      <Icon className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" aria-hidden />
       <div>
-        <dt className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-          {label}
-        </dt>
-        <dd className="mt-0.5 text-base font-medium text-foreground">
-          {value}
-        </dd>
+        <dt className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">{label}</dt>
+        <dd className="mt-0.5 text-sm font-medium text-foreground">{value}</dd>
       </div>
     </div>
   )
