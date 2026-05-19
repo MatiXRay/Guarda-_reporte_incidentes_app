@@ -12,7 +12,7 @@ export default function ReporteDetallePage() {
   const { id } = useParams<{ id: string }>()
   const { getReporte, canEdit } = useReportes()
 
-  const reporte = id ? getReporte(Number(id)) : undefined
+  const reporte = id ? getReporte(id) : undefined
   if (!reporte) return <Navigate to="/reportes" replace />
 
   const editable = canEdit(reporte)

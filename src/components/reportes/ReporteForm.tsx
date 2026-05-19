@@ -24,6 +24,7 @@ type Props = {
   submitIcon?: ReactNode
   onSubmit: (values: ReporteFormValues) => void
   onCancel: () => void
+  disabled?: boolean
 }
 
 const empty: ReporteFormValues = {
@@ -36,7 +37,7 @@ const empty: ReporteFormValues = {
   mediaUrls: [],
 }
 
-export function ReporteForm({ initialValues, submitLabel, submitIcon, onSubmit, onCancel }: Props) {
+export function ReporteForm({ initialValues, submitLabel, submitIcon, onSubmit, onCancel, disabled }: Props) {
   const [values, setValues] = useState<ReporteFormValues>({ ...empty, ...initialValues })
   const [errors, setErrors] = useState<Partial<Record<keyof ReporteFormValues, string>>>({})
 
@@ -148,7 +149,7 @@ export function ReporteForm({ initialValues, submitLabel, submitIcon, onSubmit, 
         <Button type="button" variant="outline" size="sm" onClick={onCancel}>
           Cancelar
         </Button>
-        <Button type="submit" size="sm" className="bg-brand text-brand-foreground hover:bg-[oklch(0.62_0.14_60)]">
+        <Button type="submit" size="sm" disabled={disabled} className="bg-brand text-brand-foreground hover:bg-[oklch(0.62_0.14_60)]">
           {submitIcon}
           {submitLabel}
         </Button>

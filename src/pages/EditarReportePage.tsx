@@ -10,7 +10,7 @@ export default function EditarReportePage() {
   const navigate = useNavigate()
   const { getReporte, canEdit, updateReporte } = useReportes()
 
-  const reporte = id ? getReporte(Number(id)) : undefined
+  const reporte = id ? getReporte(id) : undefined
 
   if (!reporte) return <Navigate to="/reportes" replace />
 

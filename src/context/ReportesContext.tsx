@@ -6,11 +6,12 @@ import {
   useState,
   type ReactNode,
 } from 'react'
+import { apiFetch } from '@/lib/api'
 
 export type EstadoReporte = 'Pendiente' | 'En revisión' | 'Resuelto'
 
 export type Reporte = {
-  id: number
+  id: string
   titulo: string
   descripcion: string
   ubicacion: string
@@ -27,7 +28,7 @@ const CURRENT_USER_ID = 'me'
 
 const seed: Reporte[] = [
   {
-    id: 1,
+    id: '1',
     titulo: 'Bache en Av. Sabattini',
     descripcion:
       'Bache profundo en la mano norte, a la altura del 1200. Se llena de agua cuando llueve y los autos lo esquivan invadiendo el otro carril.',
@@ -41,7 +42,7 @@ const seed: Reporte[] = [
     mediaUrls: [],
   },
   {
-    id: 2,
+    id: '2',
     titulo: 'Luminaria rota',
     descripcion:
       'La luz de la esquina dejó de funcionar hace una semana. La cuadra queda muy oscura de noche.',
@@ -55,7 +56,7 @@ const seed: Reporte[] = [
     mediaUrls: [],
   },
   {
-    id: 3,
+    id: '3',
     titulo: 'Basura sin recolectar',
     descripcion:
       'Los contenedores están llenos hace 3 días. Empieza a oler mal y a juntarse perros.',
@@ -69,7 +70,7 @@ const seed: Reporte[] = [
     mediaUrls: [],
   },
   {
-    id: 4,
+    id: '4',
     titulo: 'Semáforo sin funcionar',
     descripcion:
       'El semáforo del cruce está apagado desde la mañana. Es un cruce muy transitado.',
@@ -93,17 +94,46 @@ export const CATEGORIAS = [
   'Otro',
 ] as const
 
+const STATUS_MAP: Record<string, EstadoReporte> = {
+  open: 'Pendiente',
+  in_progress: 'En revisión',
+  resolved: 'Resuelto',
+}
+
+function backendToReporte(r: Record<string, unknown>): Reporte {
+  const location = r.location as { lat?: number; lng?: number; address?: string } | undefined
+  const createdAt = r.createdAt as string | undefined
+  const d = createdAt ? new Date(createdAt) : new Date()
+  const dd = String(d.getDate()).padStart(2, '0')
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const imageUrls = (r.imageUrls as string[] | undefined) ?? []
+  const imageUrl = r.imageUrl as string | null | undefined
+  return {
+    id: r._id as string,
+    titulo: r.title as string,
+    descripcion: r.description as string,
+    categoria: r.category as string,
+    ubicacion: location?.address ?? '',
+    lat: location?.lat ?? null,
+    lng: location?.lng ?? null,
+    fecha: `${dd}/${mm}/${d.getFullYear()}`,
+    estado: STATUS_MAP[r.status as string] ?? 'Pendiente',
+    autorId: CURRENT_USER_ID,
+    mediaUrls: imageUrls.length ? imageUrls : imageUrl ? [imageUrl] : [],
+  }
+}
+
+type CreateReporteData = Omit<Reporte, 'id' | 'fecha' | 'estado' | 'autorId' | 'ubicacion'> & { address: string }
+
 type ReportesContextValue = {
   reportes: Reporte[]
-  getReporte: (id: number) => Reporte | undefined
-  createReporte: (
-    data: Omit<Reporte, 'id' | 'fecha' | 'estado' | 'autorId' | 'ubicacion'> & { address: string }
-  ) => Reporte
+  getReporte: (id: string) => Reporte | undefined
+  createReporte: (data: CreateReporteData) => Promise<Reporte>
   updateReporte: (
-    id: number,
+    id: string,
     data: Partial<Omit<Reporte, 'id' | 'autorId' | 'estado' | 'fecha'>> & { ubicacion?: string }
   ) => Reporte | undefined
-  deleteReporte: (id: number) => void
+  deleteReporte: (id: string) => void
   canEdit: (reporte: Reporte) => boolean
   currentUserId: string
 }
@@ -121,25 +151,34 @@ export function ReportesProvider({ children }: { children: ReactNode }) {
   const [reportes, setReportes] = useState<Reporte[]>(seed)
 
   const getReporte = useCallback(
-    (id: number) => reportes.find((r) => r.id === id),
+    (id: string) => reportes.find((r) => r.id === id),
     [reportes]
   )
 
-  const createReporte: ReportesContextValue['createReporte'] = useCallback(
-    ({ address, ...data }) => {
-      const nuevo: Reporte = {
-        ...data,
-        ubicacion: address,
-        id: Date.now(),
-        fecha: todayFormatted(),
-        estado: 'Pendiente',
-        autorId: CURRENT_USER_ID,
-      }
-      setReportes((prev) => [nuevo, ...prev])
-      return nuevo
-    },
-    []
-  )
+  const createReporte = useCallback(async ({ address, ...data }: CreateReporteData): Promise<Reporte> => {
+    const body = {
+      title: data.titulo,
+      description: data.descripcion,
+      category: data.categoria,
+      location: { lat: data.lat, lng: data.lng, address },
+      imageUrls: data.mediaUrls,
+    }
+
+    const res = await apiFetch(`${import.meta.env.VITE_API_URL}/api/reports`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    })
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}))
+      throw new Error((err as { error?: string }).error ?? `Error ${res.status}`)
+    }
+
+    const saved = await res.json()
+    const nuevo = backendToReporte(saved)
+    setReportes((prev) => [nuevo, ...prev])
+    return nuevo
+  }, [])
 
   const updateReporte: ReportesContextValue['updateReporte'] = useCallback(
     (id, data) => {
@@ -158,7 +197,7 @@ export function ReportesProvider({ children }: { children: ReactNode }) {
     []
   )
 
-  const deleteReporte = useCallback((id: number) => {
+  const deleteReporte = useCallback((id: string) => {
     setReportes((prev) => prev.filter((r) => r.id !== id))
   }, [])
 
