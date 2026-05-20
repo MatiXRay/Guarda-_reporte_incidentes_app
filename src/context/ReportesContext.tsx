@@ -2,6 +2,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
@@ -25,65 +26,6 @@ export type Reporte = {
 }
 
 const CURRENT_USER_ID = 'me'
-
-const seed: Reporte[] = [
-  {
-    id: '1',
-    titulo: 'Bache en Av. Sabattini',
-    descripcion:
-      'Bache profundo en la mano norte, a la altura del 1200. Se llena de agua cuando llueve y los autos lo esquivan invadiendo el otro carril.',
-    ubicacion: 'Av. Sabattini 1200',
-    categoria: 'Calles',
-    fecha: '05/05/2025',
-    estado: 'Pendiente',
-    autorId: CURRENT_USER_ID,
-    lat: -32.4073,
-    lng: -63.2387,
-    mediaUrls: [],
-  },
-  {
-    id: '2',
-    titulo: 'Luminaria rota',
-    descripcion:
-      'La luz de la esquina dejó de funcionar hace una semana. La cuadra queda muy oscura de noche.',
-    ubicacion: 'Bv. Alvear y Mendoza',
-    categoria: 'Alumbrado',
-    fecha: '03/05/2025',
-    estado: 'En revisión',
-    autorId: CURRENT_USER_ID,
-    lat: null,
-    lng: null,
-    mediaUrls: [],
-  },
-  {
-    id: '3',
-    titulo: 'Basura sin recolectar',
-    descripcion:
-      'Los contenedores están llenos hace 3 días. Empieza a oler mal y a juntarse perros.',
-    ubicacion: 'Calle San Martín 800',
-    categoria: 'Higiene urbana',
-    fecha: '01/05/2025',
-    estado: 'Resuelto',
-    autorId: CURRENT_USER_ID,
-    lat: null,
-    lng: null,
-    mediaUrls: [],
-  },
-  {
-    id: '4',
-    titulo: 'Semáforo sin funcionar',
-    descripcion:
-      'El semáforo del cruce está apagado desde la mañana. Es un cruce muy transitado.',
-    ubicacion: 'Av. Vélez Sarsfield y Buenos Aires',
-    categoria: 'Tránsito',
-    fecha: '28/04/2025',
-    estado: 'Pendiente',
-    autorId: CURRENT_USER_ID,
-    lat: null,
-    lng: null,
-    mediaUrls: [],
-  },
-]
 
 export const CATEGORIAS = [
   'Calles',
@@ -127,6 +69,7 @@ type CreateReporteData = Omit<Reporte, 'id' | 'fecha' | 'estado' | 'autorId' | '
 
 type ReportesContextValue = {
   reportes: Reporte[]
+  loading: boolean
   getReporte: (id: string) => Reporte | undefined
   createReporte: (data: CreateReporteData) => Promise<Reporte>
   updateReporte: (
@@ -140,15 +83,17 @@ type ReportesContextValue = {
 
 const ReportesContext = createContext<ReportesContextValue | null>(null)
 
-function todayFormatted() {
-  const d = new Date()
-  const dd = String(d.getDate()).padStart(2, '0')
-  const mm = String(d.getMonth() + 1).padStart(2, '0')
-  return `${dd}/${mm}/${d.getFullYear()}`
-}
-
 export function ReportesProvider({ children }: { children: ReactNode }) {
-  const [reportes, setReportes] = useState<Reporte[]>(seed)
+  const [reportes, setReportes] = useState<Reporte[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    apiFetch(`${import.meta.env.VITE_API_URL}/api/reports`)
+      .then((res) => res.json())
+      .then((data: Record<string, unknown>[]) => setReportes(data.map(backendToReporte)))
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [])
 
   const getReporte = useCallback(
     (id: string) => reportes.find((r) => r.id === id),
@@ -209,6 +154,7 @@ export function ReportesProvider({ children }: { children: ReactNode }) {
   const value = useMemo<ReportesContextValue>(
     () => ({
       reportes,
+      loading,
       getReporte,
       createReporte,
       updateReporte,
@@ -216,7 +162,7 @@ export function ReportesProvider({ children }: { children: ReactNode }) {
       canEdit,
       currentUserId: CURRENT_USER_ID,
     }),
-    [reportes, getReporte, createReporte, updateReporte, deleteReporte, canEdit]
+    [reportes, loading, getReporte, createReporte, updateReporte, deleteReporte, canEdit]
   )
 
   return (

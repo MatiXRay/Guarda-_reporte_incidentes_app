@@ -13,7 +13,7 @@ type Filtro = 'Todos' | EstadoReporte
 const filtros: Filtro[] = ['Todos', 'Pendiente', 'En revisión', 'Resuelto']
 
 export default function MisReportesPage() {
-  const { reportes, canEdit } = useReportes()
+  const { reportes, loading, canEdit } = useReportes()
   const [filtro, setFiltro] = useState<Filtro>('Todos')
   const [busqueda, setBusqueda] = useState('')
 
@@ -89,7 +89,11 @@ export default function MisReportesPage() {
 
       {/* Lista */}
       <section className="animate-fade-up [animation-delay:80ms]" aria-label="Lista de reportes">
-        {filtrados.length === 0 ? (
+        {loading ? (
+          <Card className="flex flex-col items-center justify-center gap-2 border border-border px-6 py-12 text-center shadow-none">
+            <p className="text-sm text-muted-foreground">Cargando reportes…</p>
+          </Card>
+        ) : filtrados.length === 0 ? (
           <Card className="flex flex-col items-center justify-center gap-2 border border-border px-6 py-12 text-center shadow-none">
             <ClipboardList className="size-8 text-muted-foreground" aria-hidden />
             <p className="text-sm font-medium text-foreground">No hay reportes que coincidan</p>
