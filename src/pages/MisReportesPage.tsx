@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight, ClipboardList, MapPin, Pencil, PlusCircle, Search } from 'lucide-react'
+import { AlertTriangle, ArrowRight, ClipboardList, MapPin, Pencil, PlusCircle, Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -13,7 +13,7 @@ type Filtro = 'Todos' | EstadoReporte
 const filtros: Filtro[] = ['Todos', 'Pendiente', 'En revisión', 'Resuelto']
 
 export default function MisReportesPage() {
-  const { reportes, canEdit } = useReportes()
+  const { reportes, loading, error, canEdit } = useReportes()
   const [filtro, setFiltro] = useState<Filtro>('Todos')
   const [busqueda, setBusqueda] = useState('')
 
@@ -89,7 +89,17 @@ export default function MisReportesPage() {
 
       {/* Lista */}
       <section className="animate-fade-up [animation-delay:80ms]" aria-label="Lista de reportes">
-        {filtrados.length === 0 ? (
+        {loading ? (
+          <Card className="flex flex-col items-center justify-center gap-2 border border-border px-6 py-12 text-center shadow-none">
+            <p className="text-sm text-muted-foreground">Cargando reportes…</p>
+          </Card>
+        ) : error ? (
+          <Card className="flex flex-col items-center justify-center gap-2 border border-destructive/30 bg-destructive/5 px-6 py-12 text-center shadow-none">
+            <AlertTriangle className="size-8 text-destructive/70" aria-hidden />
+            <p className="text-sm font-medium text-foreground">No se pudieron cargar los reportes</p>
+            <p className="text-xs text-muted-foreground">{error}</p>
+          </Card>
+        ) : filtrados.length === 0 ? (
           <Card className="flex flex-col items-center justify-center gap-2 border border-border px-6 py-12 text-center shadow-none">
             <ClipboardList className="size-8 text-muted-foreground" aria-hidden />
             <p className="text-sm font-medium text-foreground">No hay reportes que coincidan</p>

@@ -2,15 +2,18 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
 } from 'react'
+import { useAuth } from '@clerk/clerk-react'
+import { apiFetch } from '@/lib/api'
 
 export type EstadoReporte = 'Pendiente' | 'En revisión' | 'Resuelto'
 
 export type Reporte = {
-  id: number
+  id: string
   titulo: string
   descripcion: string
   ubicacion: string
@@ -20,69 +23,8 @@ export type Reporte = {
   autorId: string
   lat: number | null
   lng: number | null
-  imageUrl: string | null
+  mediaUrls: string[]
 }
-
-const CURRENT_USER_ID = 'me'
-
-const seed: Reporte[] = [
-  {
-    id: 1,
-    titulo: 'Bache en Av. Sabattini',
-    descripcion:
-      'Bache profundo en la mano norte, a la altura del 1200. Se llena de agua cuando llueve y los autos lo esquivan invadiendo el otro carril.',
-    ubicacion: 'Av. Sabattini 1200',
-    categoria: 'Calles',
-    fecha: '05/05/2025',
-    estado: 'Pendiente',
-    autorId: CURRENT_USER_ID,
-    lat: -31.4135,
-    lng: -64.1811,
-    imageUrl: null,
-  },
-  {
-    id: 2,
-    titulo: 'Luminaria rota',
-    descripcion:
-      'La luz de la esquina dejó de funcionar hace una semana. La cuadra queda muy oscura de noche.',
-    ubicacion: 'Bv. Alvear y Mendoza',
-    categoria: 'Alumbrado',
-    fecha: '03/05/2025',
-    estado: 'En revisión',
-    autorId: CURRENT_USER_ID,
-    lat: null,
-    lng: null,
-    imageUrl: null,
-  },
-  {
-    id: 3,
-    titulo: 'Basura sin recolectar',
-    descripcion:
-      'Los contenedores están llenos hace 3 días. Empieza a oler mal y a juntarse perros.',
-    ubicacion: 'Calle San Martín 800',
-    categoria: 'Higiene urbana',
-    fecha: '01/05/2025',
-    estado: 'Resuelto',
-    autorId: CURRENT_USER_ID,
-    lat: null,
-    lng: null,
-    imageUrl: null,
-  },
-  {
-    id: 4,
-    titulo: 'Semáforo sin funcionar',
-    descripcion:
-      'El semáforo del cruce está apagado desde la mañana. Es un cruce muy transitado.',
-    ubicacion: 'Av. Vélez Sarsfield y Buenos Aires',
-    categoria: 'Tránsito',
-    fecha: '28/04/2025',
-    estado: 'Pendiente',
-    autorId: CURRENT_USER_ID,
-    lat: null,
-    lng: null,
-    imageUrl: null,
-  },
-]
 
 export const CATEGORIAS = [
   'Calles',
@@ -93,91 +35,175 @@ export const CATEGORIAS = [
   'Otro',
 ] as const
 
+const STATUS_MAP: Record<string, EstadoReporte> = {
+  open: 'Pendiente',
+  in_progress: 'En revisión',
+  resolved: 'Resuelto',
+}
+
+function backendToReporte(r: Record<string, unknown>): Reporte {
+  const location = r.location as { lat?: number; lng?: number; address?: string } | undefined
+  const createdAt = r.createdAt as string | undefined
+  const d = createdAt ? new Date(createdAt) : new Date()
+  const dd = String(d.getDate()).padStart(2, '0')
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const imageUrls = (r.imageUrls as string[] | undefined) ?? []
+  const imageUrl = r.imageUrl as string | null | undefined
+  return {
+    id: r._id as string,
+    titulo: r.title as string,
+    descripcion: r.description as string,
+    categoria: r.category as string,
+    ubicacion: location?.address ?? '',
+    lat: location?.lat ?? null,
+    lng: location?.lng ?? null,
+    fecha: `${dd}/${mm}/${d.getFullYear()}`,
+    estado: STATUS_MAP[r.status as string] ?? 'Pendiente',
+    autorId: (r.userId as string) ?? '',
+    mediaUrls: imageUrls.length ? imageUrls : imageUrl ? [imageUrl] : [],
+  }
+}
+
+function parseApiError(res: Response, body: Record<string, unknown>): string {
+  if (res.status === 401) return 'No autorizado. Por favor iniciá sesión nuevamente.'
+  if (res.status === 403) return 'No tenés permiso para realizar esta acción.'
+  if (res.status === 400) return (body.error as string) ?? 'Datos inválidos.'
+  return (body.error as string) ?? `Error del servidor (${res.status})`
+}
+
+type CreateReporteData = Omit<Reporte, 'id' | 'fecha' | 'estado' | 'autorId' | 'ubicacion'> & {
+  address: string
+}
+
+type UpdateReporteData = {
+  titulo?: string
+  descripcion?: string
+  categoria?: string
+  address?: string
+  lat?: number | null
+  lng?: number | null
+  mediaUrls?: string[]
+}
+
 type ReportesContextValue = {
   reportes: Reporte[]
-  getReporte: (id: number) => Reporte | undefined
-  createReporte: (
-    data: Omit<Reporte, 'id' | 'fecha' | 'estado' | 'autorId' | 'ubicacion'> & { address: string }
-  ) => Reporte
-  updateReporte: (
-    id: number,
-    data: Partial<Omit<Reporte, 'id' | 'autorId' | 'estado' | 'fecha'>>
-  ) => Reporte | undefined
-  deleteReporte: (id: number) => void
+  loading: boolean
+  error: string | null
+  currentUserId: string | null
+  getReporte: (id: string) => Reporte | undefined
+  createReporte: (data: CreateReporteData) => Promise<Reporte>
+  updateReporte: (id: string, data: UpdateReporteData) => Promise<Reporte>
+  deleteReporte: (id: string) => Promise<void>
   canEdit: (reporte: Reporte) => boolean
-  currentUserId: string
 }
 
 const ReportesContext = createContext<ReportesContextValue | null>(null)
 
-function todayFormatted() {
-  const d = new Date()
-  const dd = String(d.getDate()).padStart(2, '0')
-  const mm = String(d.getMonth() + 1).padStart(2, '0')
-  return `${dd}/${mm}/${d.getFullYear()}`
-}
-
 export function ReportesProvider({ children }: { children: ReactNode }) {
-  const [reportes, setReportes] = useState<Reporte[]>(seed)
+  const { userId } = useAuth()
+  const [reportes, setReportes] = useState<Reporte[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    setLoading(true)
+    setError(null)
+    apiFetch(`${import.meta.env.VITE_API_URL}/api/reports/me`)
+      .then(async (res) => {
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}))
+          throw new Error(parseApiError(res, body))
+        }
+        return res.json()
+      })
+      .then((data: Record<string, unknown>[]) => setReportes(data.map(backendToReporte)))
+      .catch((err: Error) => setError(err.message))
+      .finally(() => setLoading(false))
+  }, [])
 
   const getReporte = useCallback(
-    (id: number) => reportes.find((r) => r.id === id),
+    (id: string) => reportes.find((r) => r.id === id),
     [reportes]
   )
 
-  const createReporte: ReportesContextValue['createReporte'] = useCallback(
-    ({ address, ...data }) => {
-      const nuevo: Reporte = {
-        ...data,
-        ubicacion: address,
-        id: Date.now(),
-        fecha: todayFormatted(),
-        estado: 'Pendiente',
-        autorId: CURRENT_USER_ID,
-      }
-      setReportes((prev) => [nuevo, ...prev])
-      return nuevo
-    },
-    []
-  )
+  const createReporte = useCallback(async ({ address, ...data }: CreateReporteData): Promise<Reporte> => {
+    const body = {
+      title: data.titulo,
+      description: data.descripcion,
+      category: data.categoria,
+      location: { lat: data.lat, lng: data.lng, address },
+      imageUrls: data.mediaUrls,
+    }
 
-  const updateReporte: ReportesContextValue['updateReporte'] = useCallback(
-    (id, data) => {
-      let updated: Reporte | undefined
-      setReportes((prev) =>
-        prev.map((r) => {
-          if (r.id !== id) return r
-          if (r.estado !== 'Pendiente') return r
-          if (r.autorId !== CURRENT_USER_ID) return r
-          updated = { ...r, ...data }
-          return updated
-        })
-      )
-      return updated
-    },
-    []
-  )
+    const res = await apiFetch(`${import.meta.env.VITE_API_URL}/api/reports`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    })
 
-  const deleteReporte = useCallback((id: number) => {
+    if (!res.ok) {
+      const errBody = await res.json().catch(() => ({}))
+      throw new Error(parseApiError(res, errBody))
+    }
+
+    const saved = await res.json()
+    const nuevo = backendToReporte(saved)
+    setReportes((prev) => [nuevo, ...prev])
+    return nuevo
+  }, [])
+
+  const updateReporte = useCallback(async (id: string, data: UpdateReporteData): Promise<Reporte> => {
+    const body: Record<string, unknown> = {}
+    if (data.titulo !== undefined) body.title = data.titulo
+    if (data.descripcion !== undefined) body.description = data.descripcion
+    if (data.categoria !== undefined) body.category = data.categoria
+    if (data.address !== undefined) body.location = { lat: data.lat, lng: data.lng, address: data.address }
+    if (data.mediaUrls !== undefined) body.imageUrls = data.mediaUrls
+
+    const res = await apiFetch(`${import.meta.env.VITE_API_URL}/api/reports/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(body),
+    })
+
+    if (!res.ok) {
+      const errBody = await res.json().catch(() => ({}))
+      throw new Error(parseApiError(res, errBody))
+    }
+
+    const saved = await res.json()
+    const actualizado = backendToReporte(saved)
+    setReportes((prev) => prev.map((r) => (r.id === id ? actualizado : r)))
+    return actualizado
+  }, [])
+
+  const deleteReporte = useCallback(async (id: string): Promise<void> => {
+    const res = await apiFetch(`${import.meta.env.VITE_API_URL}/api/reports/${id}`, {
+      method: 'DELETE',
+    })
+
+    if (!res.ok) {
+      const errBody = await res.json().catch(() => ({}))
+      throw new Error(parseApiError(res, errBody))
+    }
+
     setReportes((prev) => prev.filter((r) => r.id !== id))
   }, [])
 
-  const canEdit = useCallback(
-    (r: Reporte) => r.estado === 'Pendiente' && r.autorId === CURRENT_USER_ID,
-    []
-  )
+  // All reports from /me belong to the current user; only estado matters for editability.
+  const canEdit = useCallback((r: Reporte) => r.estado === 'Pendiente', [])
 
   const value = useMemo<ReportesContextValue>(
     () => ({
       reportes,
+      loading,
+      error,
+      currentUserId: userId ?? null,
       getReporte,
       createReporte,
       updateReporte,
       deleteReporte,
       canEdit,
-      currentUserId: CURRENT_USER_ID,
     }),
-    [reportes, getReporte, createReporte, updateReporte, deleteReporte, canEdit]
+    [reportes, loading, error, userId, getReporte, createReporte, updateReporte, deleteReporte, canEdit]
   )
 
   return (
@@ -189,8 +215,6 @@ export function ReportesProvider({ children }: { children: ReactNode }) {
 
 export function useReportes() {
   const ctx = useContext(ReportesContext)
-  if (!ctx) {
-    throw new Error('useReportes must be used within ReportesProvider')
-  }
+  if (!ctx) throw new Error('useReportes must be used within ReportesProvider')
   return ctx
 }

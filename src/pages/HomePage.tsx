@@ -37,7 +37,7 @@ function formatFechaHoy() {
 
 export default function HomePage() {
   const { user } = useUser()
-  const { reportes } = useReportes()
+  const { reportes, loading } = useReportes()
 
   const firstName =
     user?.firstName ??
@@ -120,33 +120,39 @@ export default function HomePage() {
         </div>
 
         <Card className="border border-border shadow-none">
-          <ul className="divide-y divide-border">
-            {ultimos.map((reporte) => (
-              <li
-                key={reporte.id}
-                className="flex items-center justify-between gap-4 px-4 py-3 transition-colors hover:bg-muted/40"
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-muted text-foreground/60">
-                    <ClipboardList className="size-4" aria-hidden />
-                  </span>
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-foreground">{reporte.titulo}</p>
-                    <p className="text-xs text-muted-foreground">{reporte.fecha}</p>
+          {loading ? (
+            <p className="px-4 py-6 text-center text-sm text-muted-foreground">Cargando reportes…</p>
+          ) : ultimos.length === 0 ? (
+            <p className="px-4 py-6 text-center text-sm text-muted-foreground">Todavía no tenés reportes. ¡Creá el primero!</p>
+          ) : (
+            <ul className="divide-y divide-border">
+              {ultimos.map((reporte) => (
+                <li
+                  key={reporte.id}
+                  className="flex items-center justify-between gap-4 px-4 py-3 transition-colors hover:bg-muted/40"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-muted text-foreground/60">
+                      <ClipboardList className="size-4" aria-hidden />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-foreground">{reporte.titulo}</p>
+                      <p className="text-xs text-muted-foreground">{reporte.fecha}</p>
+                    </div>
                   </div>
-                </div>
-                <div className="flex shrink-0 items-center gap-2">
-                  <Badge className={cn('h-5 rounded-full border-0 px-2 text-xs font-medium', estadoBadgeStyles[reporte.estado])}>
-                    {reporte.estado}
-                  </Badge>
-                  <Button size="sm" variant="outline" render={<Link to={`/reportes/${reporte.id}`} />} className="h-7 px-2 text-xs">
-                    Ver
-                    <ArrowRight className="size-3" aria-hidden />
-                  </Button>
-                </div>
-              </li>
-            ))}
-          </ul>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <Badge className={cn('h-5 rounded-full border-0 px-2 text-xs font-medium', estadoBadgeStyles[reporte.estado])}>
+                      {reporte.estado}
+                    </Badge>
+                    <Button size="sm" variant="outline" render={<Link to={`/reportes/${reporte.id}`} />} className="h-7 px-2 text-xs">
+                      Ver
+                      <ArrowRight className="size-3" aria-hidden />
+                    </Button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
         </Card>
       </section>
     </div>

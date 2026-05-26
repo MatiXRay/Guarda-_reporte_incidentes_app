@@ -1,19 +1,7 @@
-/**
- * UserRoleContext
- *
- * Obtiene el rol del usuario desde el backend luego de autenticarse con Clerk.
- * El backend es el único responsable de validar el token, crear el user en MongoDB
- * y determinar su rol. Este contexto solo almacena lo que el backend devuelve.
- *
- * Uso:
- *   const { role, loading } = useUserRole()
- */
-
 import { createContext, useContext, useEffect, useState } from 'react'
 import { useAuth } from '@clerk/clerk-react'
-import { apiFetch } from '@/lib/api'
+import { apiFetch, setTokenGetter } from '@/lib/api'
 
-/** Rol devuelto por el backend. null = no autenticado o sin respuesta aún. */
 type Role = string | null
 
 interface UserRoleContextType {
@@ -24,9 +12,15 @@ interface UserRoleContextType {
 const UserRoleContext = createContext<UserRoleContextType>({ role: null, loading: true })
 
 export function UserRoleProvider({ children }: { children: React.ReactNode }) {
-  const { isSignedIn, isLoaded } = useAuth()
+  const { isSignedIn, isLoaded, getToken } = useAuth()
   const [role, setRole] = useState<Role>(null)
   const [loading, setLoading] = useState(true)
+
+  // Keep the token getter up-to-date so apiFetch always uses a fresh token.
+  // This runs before the sync effect because effects run in declaration order.
+  useEffect(() => {
+    setTokenGetter(getToken)
+  }, [getToken])
 
   useEffect(() => {
     if (!isLoaded) return
@@ -37,7 +31,6 @@ export function UserRoleProvider({ children }: { children: React.ReactNode }) {
       return
     }
 
-    // El backend verifica el token, maneja el user en MongoDB y devuelve el rol
     apiFetch(`${import.meta.env.VITE_API_URL}/api/auth/sync`, { method: 'POST' })
       .then((res) => res.json())
       .then((data) => setRole(data.role))
@@ -52,5 +45,4 @@ export function UserRoleProvider({ children }: { children: React.ReactNode }) {
   )
 }
 
-/** Hook para consumir el rol en cualquier componente. */
 export const useUserRole = () => useContext(UserRoleContext)

@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, Lock, Save } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -9,8 +10,10 @@ export default function EditarReportePage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { getReporte, canEdit, updateReporte } = useReportes()
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const reporte = id ? getReporte(Number(id)) : undefined
+  const reporte = id ? getReporte(id) : undefined
 
   if (!reporte) return <Navigate to="/reportes" replace />
 
@@ -31,7 +34,8 @@ export default function EditarReportePage() {
             <Lock className="size-8 text-muted-foreground" aria-hidden />
             <h1 className="font-heading text-lg font-semibold">Este reporte no se puede editar</h1>
             <p className="max-w-sm text-sm text-muted-foreground">
-              Solo los reportes <span className="font-medium text-foreground">Pendientes</span> pueden modificarse. Este está en{' '}
+              Solo los reportes <span className="font-medium text-foreground">Pendientes</span> pueden
+              modificarse. Este está en{' '}
               <span className="font-medium text-foreground">{reporte.estado}</span>.
             </p>
             <Button size="sm" render={<Link to={`/reportes/${reporte.id}`} />} className="mt-1">
@@ -43,18 +47,25 @@ export default function EditarReportePage() {
     )
   }
 
-  function handleSubmit(values: ReporteFormValues) {
+  async function handleSubmit(values: ReporteFormValues) {
     if (!reporte) return
-    updateReporte(reporte.id, {
-      titulo: values.titulo,
-      categoria: values.categoria,
-      descripcion: values.descripcion,
-      ubicacion: values.address,
-      lat: values.lat,
-      lng: values.lng,
-      imageUrl: values.imageUrl,
-    })
-    navigate(`/reportes/${reporte.id}`, { replace: true })
+    setSubmitting(true)
+    setError(null)
+    try {
+      await updateReporte(reporte.id, {
+        titulo: values.titulo,
+        categoria: values.categoria,
+        descripcion: values.descripcion,
+        address: values.address,
+        lat: values.lat,
+        lng: values.lng,
+        mediaUrls: values.mediaUrls,
+      })
+      navigate(`/reportes/${reporte.id}`, { replace: true })
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al guardar los cambios')
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -74,12 +85,18 @@ export default function EditarReportePage() {
           Editar reporte
         </h1>
         <p className="mt-0.5 text-sm text-muted-foreground">
-          Podés modificarlo mientras siga en estado <span className="font-medium text-foreground">Pendiente</span>.
+          Podés modificarlo mientras siga en estado{' '}
+          <span className="font-medium text-foreground">Pendiente</span>.
         </p>
       </div>
 
       <Card className="border border-border shadow-none">
         <CardContent className="p-5">
+          {error && (
+            <p className="mb-4 rounded-md bg-destructive/10 px-3 py-2 text-sm font-medium text-destructive">
+              {error}
+            </p>
+          )}
           <ReporteForm
             initialValues={{
               titulo: reporte.titulo,
@@ -88,12 +105,13 @@ export default function EditarReportePage() {
               descripcion: reporte.descripcion,
               lat: reporte.lat,
               lng: reporte.lng,
-              imageUrl: reporte.imageUrl,
+              mediaUrls: reporte.mediaUrls,
             }}
-            submitLabel="Guardar cambios"
+            submitLabel={submitting ? 'Guardando…' : 'Guardar cambios'}
             submitIcon={<Save className="size-3.5" aria-hidden />}
             onSubmit={handleSubmit}
             onCancel={() => navigate(`/reportes/${reporte.id}`)}
+            disabled={submitting}
           />
         </CardContent>
       </Card>

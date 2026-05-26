@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ArrowLeft, PlusCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -8,18 +9,27 @@ import { useReportes } from '@/context/ReportesContext'
 export default function NuevoReportePage() {
   const navigate = useNavigate()
   const { createReporte } = useReportes()
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  function handleSubmit(values: ReporteFormValues) {
-    const nuevo = createReporte({
-      titulo: values.titulo,
-      categoria: values.categoria,
-      descripcion: values.descripcion,
-      address: values.address,
-      lat: values.lat,
-      lng: values.lng,
-      imageUrl: values.imageUrl,
-    })
-    navigate(`/reportes/${nuevo.id}`, { replace: true })
+  async function handleSubmit(values: ReporteFormValues) {
+    setSubmitting(true)
+    setError(null)
+    try {
+      const nuevo = await createReporte({
+        titulo: values.titulo,
+        categoria: values.categoria,
+        descripcion: values.descripcion,
+        address: values.address,
+        lat: values.lat,
+        lng: values.lng,
+        mediaUrls: values.mediaUrls,
+      })
+      navigate(`/reportes/${nuevo.id}`, { replace: true })
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al crear el reporte')
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -45,11 +55,17 @@ export default function NuevoReportePage() {
 
       <Card className="border border-border shadow-none">
         <CardContent className="p-5">
+          {error && (
+            <p className="mb-4 rounded-md bg-destructive/10 px-3 py-2 text-sm font-medium text-destructive">
+              {error}
+            </p>
+          )}
           <ReporteForm
-            submitLabel="Crear reporte"
+            submitLabel={submitting ? 'Guardando…' : 'Crear reporte'}
             submitIcon={<PlusCircle className="size-3.5" aria-hidden />}
             onSubmit={handleSubmit}
             onCancel={() => navigate('/reportes')}
+            disabled={submitting}
           />
         </CardContent>
       </Card>
