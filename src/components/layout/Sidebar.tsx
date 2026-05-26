@@ -8,10 +8,14 @@ import {
   Settings,
   HelpCircle,
   ChevronRight,
+  LayoutDashboard,
+  Users,
+  ShieldCheck,
   type LucideIcon,
 } from 'lucide-react'
 import { Separator } from '@/components/ui/separator'
 import { cn } from '@/lib/utils'
+import { useUserRole } from '@/context/UserRoleContext'
 
 type NavItem = {
   label: string
@@ -28,6 +32,16 @@ const secondaryNav: NavItem[] = [
 const reportesSubNav: NavItem[] = [
   { label: 'Mis Reportes', icon: ClipboardList, to: '/reportes', end: true },
   { label: 'Nuevo Reporte', icon: PlusCircle, to: '/reportes/nuevo' },
+]
+
+/* nav exclusiva para admin y superadmin */
+const adminNav: NavItem[] = [
+  { label: 'Panel de reportes', icon: LayoutDashboard, to: '/admin/reportes', end: true },
+]
+
+/* nav exclusiva para superadmin */
+const superadminNav: NavItem[] = [
+  { label: 'Usuarios', icon: Users, to: '/admin/usuarios', end: true },
 ]
 
 function SidebarLink({ item }: { item: NavItem }) {
@@ -112,6 +126,11 @@ function ReportesSection() {
 }
 
 export function Sidebar() {
+  const { role } = useUserRole()
+
+  const isAdmin = role === 'admin' || role === 'superadmin'
+  const isSuperadmin = role === 'superadmin'
+
   return (
     <aside
       className="sticky top-14 hidden h-[calc(100vh-3.5rem)] w-52 shrink-0 border-r border-border lg:block"
@@ -131,6 +150,33 @@ export function Sidebar() {
           </li>
         </ul>
 
+        {/* Sección admin */}
+        {isAdmin && (
+          <>
+            <Separator className="my-3" />
+            <p className="px-2.5 pb-1 text-[11px] font-semibold tracking-[0.12em] text-muted-foreground uppercase">
+              Administración
+            </p>
+            <ul className="flex flex-col gap-0.5">
+              {adminNav.map((item) => (
+                <li key={item.label}>
+                  <SidebarLink item={item} />
+                </li>
+              ))}
+              {/* Sección superadmin */}
+              {isSuperadmin && (
+                <>
+                  {superadminNav.map((item) => (
+                    <li key={item.label}>
+                      <SidebarLink item={item} />
+                    </li>
+                  ))}
+                </>
+              )}
+            </ul>
+          </>
+        )}
+
         <Separator className="my-3" />
 
         <p className="px-2.5 pb-1 text-[11px] font-semibold tracking-[0.12em] text-muted-foreground uppercase">
@@ -144,15 +190,30 @@ export function Sidebar() {
           ))}
         </ul>
 
-        <div className="mt-auto rounded-lg bg-muted p-3">
-          <p className="text-xs font-semibold text-foreground">
-            ¿Necesitás ayuda?
-          </p>
-          <p className="mt-0.5 text-xs leading-snug text-muted-foreground">
-            Llamanos al{' '}
-            <span className="font-semibold text-foreground">147</span> las 24 hs.
-          </p>
-        </div>
+        {/* Badge de rol */}
+        {isAdmin && (
+          <div className="mt-auto rounded-lg bg-muted p-3">
+            <div className="flex items-center gap-1.5">
+              <ShieldCheck className="size-3.5 text-primary" aria-hidden />
+              <p className="text-xs font-semibold text-foreground capitalize">{role}</p>
+            </div>
+            <p className="mt-0.5 text-xs leading-snug text-muted-foreground">
+              Tenés acceso al panel de administración.
+            </p>
+          </div>
+        )}
+
+        {!isAdmin && (
+          <div className="mt-auto rounded-lg bg-muted p-3">
+            <p className="text-xs font-semibold text-foreground">
+              ¿Necesitás ayuda?
+            </p>
+            <p className="mt-0.5 text-xs leading-snug text-muted-foreground">
+              Llamanos al{' '}
+              <span className="font-semibold text-foreground">147</span> las 24 hs.
+            </p>
+          </div>
+        )}
       </nav>
     </aside>
   )
