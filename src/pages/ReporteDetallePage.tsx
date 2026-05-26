@@ -1,5 +1,17 @@
-import { Link, Navigate, useParams } from 'react-router-dom'
-import { ArrowLeft, CalendarDays, ClipboardList, Film, Lock, MapPin, Pencil, Tag } from 'lucide-react'
+import { useState } from 'react'
+import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
+import {
+  AlertTriangle,
+  ArrowLeft,
+  CalendarDays,
+  ClipboardList,
+  Film,
+  Lock,
+  MapPin,
+  Pencil,
+  Tag,
+  Trash2,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -10,12 +22,29 @@ import { cn } from '@/lib/utils'
 
 export default function ReporteDetallePage() {
   const { id } = useParams<{ id: string }>()
-  const { getReporte, canEdit } = useReportes()
+  const navigate = useNavigate()
+  const { getReporte, canEdit, deleteReporte } = useReportes()
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   const reporte = id ? getReporte(id) : undefined
   if (!reporte) return <Navigate to="/reportes" replace />
 
   const editable = canEdit(reporte)
+
+  async function handleDelete() {
+    setDeleting(true)
+    setDeleteError(null)
+    try {
+      await deleteReporte(reporte!.id)
+      navigate('/reportes', { replace: true })
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : 'Error al eliminar el reporte')
+      setDeleting(false)
+      setConfirmDelete(false)
+    }
+  }
 
   return (
     <article className="animate-fade-up mx-auto max-w-2xl">
@@ -32,7 +61,12 @@ export default function ReporteDetallePage() {
       <Card className="border border-border shadow-none">
         <CardContent className="p-5">
           <div className="flex flex-wrap items-center gap-2">
-            <Badge className={cn('h-5 rounded-full border-0 px-2 text-xs font-medium', estadoBadgeStyles[reporte.estado])}>
+            <Badge
+              className={cn(
+                'h-5 rounded-full border-0 px-2 text-xs font-medium',
+                estadoBadgeStyles[reporte.estado]
+              )}
+            >
               {reporte.estado}
             </Badge>
             <span className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
@@ -73,9 +107,13 @@ export default function ReporteDetallePage() {
                 </p>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                   {reporte.mediaUrls.map((url) => {
-                    const isVideo = url.includes('/video/upload/') || /\.(mp4|mov|webm)(\?|$)/i.test(url)
+                    const isVideo =
+                      url.includes('/video/upload/') || /\.(mp4|mov|webm)(\?|$)/i.test(url)
                     return (
-                      <div key={url} className="relative overflow-hidden rounded-lg border border-border bg-muted">
+                      <div
+                        key={url}
+                        className="relative overflow-hidden rounded-lg border border-border bg-muted"
+                      >
                         {isVideo ? (
                           <>
                             <video
@@ -105,10 +143,18 @@ export default function ReporteDetallePage() {
 
           <Separator className="my-4" />
 
+          {deleteError && (
+            <p className="mb-3 flex items-center gap-1.5 rounded-md bg-destructive/10 px-3 py-2 text-sm font-medium text-destructive">
+              <AlertTriangle className="size-3.5 shrink-0" aria-hidden />
+              {deleteError}
+            </p>
+          )}
+
           <div className="flex items-center justify-between gap-3">
             {editable ? (
               <p className="text-xs text-muted-foreground">
-                Estado <span className="font-medium text-foreground">Pendiente</span>: podés editarlo.
+                Estado <span className="font-medium text-foreground">Pendiente</span>: podés
+                editarlo o eliminarlo.
               </p>
             ) : (
               <p className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -116,11 +162,53 @@ export default function ReporteDetallePage() {
                 Este reporte ya no se puede modificar.
               </p>
             )}
+
             {editable && (
-              <Button size="sm" render={<Link to={`/reportes/${reporte.id}/editar`} />} className="shrink-0">
-                <Pencil className="size-3.5" aria-hidden />
-                Editar
-              </Button>
+              <div className="flex shrink-0 items-center gap-1.5">
+                {confirmDelete ? (
+                  <>
+                    <span className="text-xs text-muted-foreground">¿Eliminar?</span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setConfirmDelete(false)}
+                      disabled={deleting}
+                      className="h-7 px-2.5 text-xs"
+                    >
+                      Cancelar
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={handleDelete}
+                      disabled={deleting}
+                      className="h-7 px-2.5 text-xs bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      <Trash2 className="size-3" aria-hidden />
+                      {deleting ? 'Eliminando…' : 'Confirmar'}
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setConfirmDelete(true)}
+                      className="h-7 px-2.5 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
+                    >
+                      <Trash2 className="size-3" aria-hidden />
+                      Eliminar
+                    </Button>
+                    <Button
+                      size="sm"
+                      render={<Link to={`/reportes/${reporte.id}/editar`} />}
+                      className="shrink-0"
+                    >
+                      <Pencil className="size-3.5" aria-hidden />
+                      Editar
+                    </Button>
+                  </>
+                )}
+              </div>
             )}
           </div>
         </CardContent>
@@ -129,12 +217,22 @@ export default function ReporteDetallePage() {
   )
 }
 
-function Detalle({ icon: Icon, label, value }: { icon: typeof Tag; label: string; value: string }) {
+function Detalle({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: typeof Tag
+  label: string
+  value: string
+}) {
   return (
     <div className="flex items-start gap-2">
       <Icon className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" aria-hidden />
       <div>
-        <dt className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">{label}</dt>
+        <dt className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
+          {label}
+        </dt>
         <dd className="mt-0.5 text-sm font-medium text-foreground">{value}</dd>
       </div>
     </div>

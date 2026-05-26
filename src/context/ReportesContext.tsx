@@ -7,6 +7,7 @@ import {
   useState,
   type ReactNode,
 } from 'react'
+import { useAuth } from '@clerk/clerk-react'
 import { apiFetch } from '@/lib/api'
 
 export type EstadoReporte = 'Pendiente' | 'En revisión' | 'Resuelto'
@@ -24,8 +25,6 @@ export type Reporte = {
   lng: number | null
   mediaUrls: string[]
 }
-
-const CURRENT_USER_ID = 'me'
 
 export const CATEGORIAS = [
   'Calles',
@@ -60,38 +59,65 @@ function backendToReporte(r: Record<string, unknown>): Reporte {
     lng: location?.lng ?? null,
     fecha: `${dd}/${mm}/${d.getFullYear()}`,
     estado: STATUS_MAP[r.status as string] ?? 'Pendiente',
-    autorId: CURRENT_USER_ID,
+    autorId: (r.userId as string) ?? '',
     mediaUrls: imageUrls.length ? imageUrls : imageUrl ? [imageUrl] : [],
   }
 }
 
-type CreateReporteData = Omit<Reporte, 'id' | 'fecha' | 'estado' | 'autorId' | 'ubicacion'> & { address: string }
+function parseApiError(res: Response, body: Record<string, unknown>): string {
+  if (res.status === 401) return 'No autorizado. Por favor iniciá sesión nuevamente.'
+  if (res.status === 403) return 'No tenés permiso para realizar esta acción.'
+  if (res.status === 400) return (body.error as string) ?? 'Datos inválidos.'
+  return (body.error as string) ?? `Error del servidor (${res.status})`
+}
+
+type CreateReporteData = Omit<Reporte, 'id' | 'fecha' | 'estado' | 'autorId' | 'ubicacion'> & {
+  address: string
+}
+
+type UpdateReporteData = {
+  titulo?: string
+  descripcion?: string
+  categoria?: string
+  address?: string
+  lat?: number | null
+  lng?: number | null
+  mediaUrls?: string[]
+}
 
 type ReportesContextValue = {
   reportes: Reporte[]
   loading: boolean
+  error: string | null
+  currentUserId: string | null
   getReporte: (id: string) => Reporte | undefined
   createReporte: (data: CreateReporteData) => Promise<Reporte>
-  updateReporte: (
-    id: string,
-    data: Partial<Omit<Reporte, 'id' | 'autorId' | 'estado' | 'fecha'>> & { ubicacion?: string }
-  ) => Reporte | undefined
-  deleteReporte: (id: string) => void
+  updateReporte: (id: string, data: UpdateReporteData) => Promise<Reporte>
+  deleteReporte: (id: string) => Promise<void>
   canEdit: (reporte: Reporte) => boolean
-  currentUserId: string
 }
 
 const ReportesContext = createContext<ReportesContextValue | null>(null)
 
 export function ReportesProvider({ children }: { children: ReactNode }) {
+  const { userId } = useAuth()
   const [reportes, setReportes] = useState<Reporte[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    apiFetch(`${import.meta.env.VITE_API_URL}/api/reports`)
-      .then((res) => res.json())
+    setLoading(true)
+    setError(null)
+    apiFetch(`${import.meta.env.VITE_API_URL}/api/reports/me`)
+      .then(async (res) => {
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}))
+          throw new Error(parseApiError(res, body))
+        }
+        return res.json()
+      })
       .then((data: Record<string, unknown>[]) => setReportes(data.map(backendToReporte)))
-      .catch(() => {})
+      .catch((err: Error) => setError(err.message))
       .finally(() => setLoading(false))
   }, [])
 
@@ -115,8 +141,8 @@ export function ReportesProvider({ children }: { children: ReactNode }) {
     })
 
     if (!res.ok) {
-      const err = await res.json().catch(() => ({}))
-      throw new Error((err as { error?: string }).error ?? `Error ${res.status}`)
+      const errBody = await res.json().catch(() => ({}))
+      throw new Error(parseApiError(res, errBody))
     }
 
     const saved = await res.json()
@@ -125,44 +151,59 @@ export function ReportesProvider({ children }: { children: ReactNode }) {
     return nuevo
   }, [])
 
-  const updateReporte: ReportesContextValue['updateReporte'] = useCallback(
-    (id, data) => {
-      let updated: Reporte | undefined
-      setReportes((prev) =>
-        prev.map((r) => {
-          if (r.id !== id) return r
-          if (r.estado !== 'Pendiente') return r
-          if (r.autorId !== CURRENT_USER_ID) return r
-          updated = { ...r, ...data }
-          return updated
-        })
-      )
-      return updated
-    },
-    []
-  )
+  const updateReporte = useCallback(async (id: string, data: UpdateReporteData): Promise<Reporte> => {
+    const body: Record<string, unknown> = {}
+    if (data.titulo !== undefined) body.title = data.titulo
+    if (data.descripcion !== undefined) body.description = data.descripcion
+    if (data.categoria !== undefined) body.category = data.categoria
+    if (data.address !== undefined) body.location = { lat: data.lat, lng: data.lng, address: data.address }
+    if (data.mediaUrls !== undefined) body.imageUrls = data.mediaUrls
 
-  const deleteReporte = useCallback((id: string) => {
+    const res = await apiFetch(`${import.meta.env.VITE_API_URL}/api/reports/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(body),
+    })
+
+    if (!res.ok) {
+      const errBody = await res.json().catch(() => ({}))
+      throw new Error(parseApiError(res, errBody))
+    }
+
+    const saved = await res.json()
+    const actualizado = backendToReporte(saved)
+    setReportes((prev) => prev.map((r) => (r.id === id ? actualizado : r)))
+    return actualizado
+  }, [])
+
+  const deleteReporte = useCallback(async (id: string): Promise<void> => {
+    const res = await apiFetch(`${import.meta.env.VITE_API_URL}/api/reports/${id}`, {
+      method: 'DELETE',
+    })
+
+    if (!res.ok) {
+      const errBody = await res.json().catch(() => ({}))
+      throw new Error(parseApiError(res, errBody))
+    }
+
     setReportes((prev) => prev.filter((r) => r.id !== id))
   }, [])
 
-  const canEdit = useCallback(
-    (r: Reporte) => r.estado === 'Pendiente' && r.autorId === CURRENT_USER_ID,
-    []
-  )
+  // All reports from /me belong to the current user; only estado matters for editability.
+  const canEdit = useCallback((r: Reporte) => r.estado === 'Pendiente', [])
 
   const value = useMemo<ReportesContextValue>(
     () => ({
       reportes,
       loading,
+      error,
+      currentUserId: userId ?? null,
       getReporte,
       createReporte,
       updateReporte,
       deleteReporte,
       canEdit,
-      currentUserId: CURRENT_USER_ID,
     }),
-    [reportes, loading, getReporte, createReporte, updateReporte, deleteReporte, canEdit]
+    [reportes, loading, error, userId, getReporte, createReporte, updateReporte, deleteReporte, canEdit]
   )
 
   return (
@@ -174,8 +215,6 @@ export function ReportesProvider({ children }: { children: ReactNode }) {
 
 export function useReportes() {
   const ctx = useContext(ReportesContext)
-  if (!ctx) {
-    throw new Error('useReportes must be used within ReportesProvider')
-  }
+  if (!ctx) throw new Error('useReportes must be used within ReportesProvider')
   return ctx
 }
