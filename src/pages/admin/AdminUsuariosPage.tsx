@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input'
 import { apiFetch } from '@/lib/api'
 import { cn } from '@/lib/utils'
 
-type Role = 'user' | 'admin' | 'superadmin'
+type Role = 'citizen' | 'admin' | 'superadmin'
 
 interface Usuario {
     _id: string
@@ -24,12 +24,12 @@ interface Usuario {
 }
 
 const roleBadgeStyles: Record<Role, string> = {
-    user: 'bg-muted text-muted-foreground',
+    citizen: 'bg-muted text-muted-foreground',
     admin: 'bg-primary/10 text-primary',
     superadmin: 'bg-[oklch(0.95_0.06_155)] text-[oklch(0.42_0.13_155)]',
 }
 
-const ROLES: Role[] = ['user', 'admin', 'superadmin']
+const ROLES: Role[] = ['citizen', 'admin', 'superadmin']
 
 function formatFecha(iso: string) {
     return new Intl.DateTimeFormat('es-AR', {
