@@ -149,7 +149,7 @@ export default function AdminUsuariosPage() {
                     </p>
                 </div>
                 {!loading && (
-                    <span className="flex items-center gap-1.5 rounded-full border border-border bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
+                    <span className="flex items-center gap-1.5 rounded-full border border-border bg-muted px-3 py-1 text-sm font-medium text-muted-foreground">
                         <Users className="size-3.5" aria-hidden />
                         {activos.length} activos · {desactivados.length} desactivados
                     </span>
@@ -174,7 +174,7 @@ export default function AdminUsuariosPage() {
                             key={f}
                             onClick={() => setFiltro(f)}
                             className={cn(
-                                'h-7 rounded-full border px-3 text-xs font-medium transition-colors outline-none capitalize',
+                                'h-8 rounded-full border px-3 text-sm font-medium transition-colors outline-none capitalize',
                                 'focus-visible:ring-2 focus-visible:ring-ring/50',
                                 filtro === f
                                     ? 'border-primary bg-primary text-primary-foreground'
@@ -197,7 +197,7 @@ export default function AdminUsuariosPage() {
                     <Card className="flex flex-col items-center justify-center gap-2 border border-destructive/30 bg-destructive/5 px-6 py-12 text-center shadow-none">
                         <AlertTriangle className="size-8 text-destructive/70" aria-hidden />
                         <p className="text-sm font-medium text-foreground">Error al cargar usuarios</p>
-                        <p className="text-xs text-muted-foreground">{error}</p>
+                        <p className="text-sm text-muted-foreground">{error}</p>
                     </Card>
                 ) : filtrados.length === 0 ? (
                     <Card className="flex flex-col items-center justify-center gap-2 border border-border px-6 py-12 text-center shadow-none">
@@ -232,11 +232,11 @@ export default function AdminUsuariosPage() {
                                             </span>
                                             <div className="min-w-0">
                                                 <div className="flex flex-wrap items-center gap-1.5">
-                                                    <Badge className={cn('h-5 rounded-full border-0 px-2 text-xs font-medium', roleBadgeStyles[usuario.role])}>
+                                                    <Badge className={cn('h-5 rounded-full border-0 px-2 text-sm font-medium', roleBadgeStyles[usuario.role])}>
                                                         {usuario.role}
                                                     </Badge>
                                                     {!usuario.isActive && (
-                                                        <Badge className="h-5 rounded-full border-0 bg-destructive/10 px-2 text-xs font-medium text-destructive">
+                                                        <Badge className="h-5 rounded-full border-0 bg-destructive/10 px-2 text-sm font-medium text-destructive">
                                                             desactivado
                                                         </Badge>
                                                     )}
@@ -244,8 +244,8 @@ export default function AdminUsuariosPage() {
                                                 <p className="mt-0.5 text-sm font-semibold leading-snug text-foreground">
                                                     {usuario.nombre}
                                                 </p>
-                                                <p className="text-xs text-muted-foreground">{usuario.email}</p>
-                                                <p className="text-xs text-muted-foreground">
+                                                <p className="text-sm text-muted-foreground">{usuario.email}</p>
+                                                <p className="text-sm text-muted-foreground">
                                                     {usuario.isActive
                                                         ? `Registrado el ${formatFecha(usuario.createdAt)}`
                                                         : `Desactivado el ${formatFecha(usuario.deletedAt!)}`
@@ -262,7 +262,7 @@ export default function AdminUsuariosPage() {
                                                         value={usuario.role}
                                                         disabled={updatingId === usuario._id}
                                                         onChange={(e) => handleRoleChange(usuario._id, e.target.value as Role)}
-                                                        className="h-7 rounded-md border border-border bg-background px-2 text-xs font-medium text-foreground outline-none focus:ring-2 focus:ring-ring/50 disabled:opacity-50"
+                                                        className="h-8 rounded-md border border-border bg-background px-2 text-sm font-medium text-foreground outline-none focus:ring-2 focus:ring-ring/50 disabled:opacity-50"
                                                         aria-label={`Cambiar rol de ${usuario.nombre}`}
                                                     >
                                                         {ROLES.map((r) => (
@@ -274,7 +274,7 @@ export default function AdminUsuariosPage() {
                                                         variant="outline"
                                                         disabled={deletingId === usuario._id}
                                                         onClick={() => handleDesactivar(usuario._id, usuario.nombre)}
-                                                        className="h-7 px-2 text-xs text-destructive hover:border-destructive/50 hover:bg-destructive/5 hover:text-destructive"
+                                                        className="h-8 px-2 text-sm text-destructive hover:border-destructive/50 hover:bg-destructive/5 hover:text-destructive"
                                                         aria-label={`Desactivar usuario ${usuario.nombre}`}
                                                     >
                                                         <Trash2 className="size-3.5" aria-hidden />
@@ -287,7 +287,7 @@ export default function AdminUsuariosPage() {
                                                     variant="outline"
                                                     disabled={updatingId === usuario._id}
                                                     onClick={() => handleReactivar(usuario._id, usuario.nombre)}
-                                                    className="h-7 px-2 text-xs text-primary hover:border-primary/50 hover:bg-primary/5 hover:text-primary"
+                                                    className="h-8 px-2 text-sm text-primary hover:border-primary/50 hover:bg-primary/5 hover:text-primary"
                                                     aria-label={`Reactivar usuario ${usuario.nombre}`}
                                                 >
                                                     <RotateCcw className="size-3.5" aria-hidden />

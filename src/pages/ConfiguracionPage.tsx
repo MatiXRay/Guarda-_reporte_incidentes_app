@@ -29,7 +29,7 @@ export default function ConfiguracionPage() {
           </span>
           <div>
             <CardTitle className="text-sm font-semibold">{nombre}</CardTitle>
-            <CardDescription className="text-xs">{email}</CardDescription>
+            <CardDescription className="text-sm">{email}</CardDescription>
           </div>
         </CardHeader>
         <Separator />
@@ -50,7 +50,7 @@ export default function ConfiguracionPage() {
                     <Icon className="size-4 shrink-0 text-muted-foreground" aria-hidden />
                     <span className="min-w-0 flex-1">
                       <span className="block text-sm font-medium text-foreground">{item.title}</span>
-                      <span className="mt-0.5 block text-xs text-muted-foreground">{item.description}</span>
+                      <span className="mt-0.5 block text-sm text-muted-foreground">{item.description}</span>
                     </span>
                   </button>
                 </li>

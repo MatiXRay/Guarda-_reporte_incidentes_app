@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { AlertTriangle, ArrowRight, ClipboardList, MapPin, Pencil, PlusCircle, Search } from 'lucide-react'
+import { AlertTriangle, ArrowRight, CalendarDays, ClipboardList, MapPin, Pencil, PlusCircle, Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -44,10 +44,10 @@ export default function MisReportesPage() {
             Los reportes <span className="font-medium text-foreground">Pendientes</span> son editables.
           </p>
         </div>
-        <Button size="sm" render={<Link to="/reportes/nuevo" />} className="shrink-0 bg-brand text-brand-foreground hover:bg-[oklch(0.62_0.14_60)]">
+        {/* <Button size="sm" render={<Link to="/reportes/nuevo" />} className="shrink-0 bg-brand text-brand-foreground hover:bg-[oklch(0.62_0.14_60)]">
           <PlusCircle className="size-3.5" aria-hidden />
           Nuevo reporte
-        </Button>
+        </Button> */}
       </header>
 
       {/* Filtros */}
@@ -73,7 +73,7 @@ export default function MisReportesPage() {
                 aria-selected={active}
                 onClick={() => setFiltro(f)}
                 className={cn(
-                  'h-7 rounded-full border px-3 text-xs font-medium transition-colors outline-none',
+                  'h-8 rounded-full border px-3 text-sm font-medium transition-colors outline-none',
                   'focus-visible:ring-2 focus-visible:ring-ring/50',
                   active
                     ? 'border-primary bg-primary text-primary-foreground'
@@ -97,13 +97,13 @@ export default function MisReportesPage() {
           <Card className="flex flex-col items-center justify-center gap-2 border border-destructive/30 bg-destructive/5 px-6 py-12 text-center shadow-none">
             <AlertTriangle className="size-8 text-destructive/70" aria-hidden />
             <p className="text-sm font-medium text-foreground">No se pudieron cargar los reportes</p>
-            <p className="text-xs text-muted-foreground">{error}</p>
+            <p className="text-sm text-muted-foreground">{error}</p>
           </Card>
         ) : filtrados.length === 0 ? (
           <Card className="flex flex-col items-center justify-center gap-2 border border-border px-6 py-12 text-center shadow-none">
             <ClipboardList className="size-8 text-muted-foreground" aria-hidden />
             <p className="text-sm font-medium text-foreground">No hay reportes que coincidan</p>
-            <p className="text-xs text-muted-foreground">Cambiá el filtro o creá un nuevo reporte.</p>
+            <p className="text-sm text-muted-foreground">Cambiá el filtro o creá un nuevo reporte.</p>
           </Card>
         ) : (
           <ul className="flex flex-col gap-2">
@@ -119,32 +119,35 @@ export default function MisReportesPage() {
                         </span>
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-1.5">
-                            <Badge className={cn('h-5 rounded-full border-0 px-2 text-xs font-medium', estadoBadgeStyles[reporte.estado])}>
+                            <Badge className={cn('h-5 rounded-full border-0 px-2 text-sm font-medium', estadoBadgeStyles[reporte.estado])}>
                               {reporte.estado}
                             </Badge>
                             <span className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
                               {reporte.categoria}
                             </span>
                           </div>
-                          <p className="mt-1 text-sm font-semibold leading-snug text-foreground">
+                          <p className="text-[18px] mt-3 text-sm font-semibold leading-snug text-foreground">
                             {reporte.titulo}
                           </p>
-                          <div className="mt-1 flex flex-wrap items-center gap-x-3 text-xs text-muted-foreground">
-                            <span className="inline-flex items-center gap-1">
+                          <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                            <span className="inline-flex min-w-0 max-w-[18rem] items-center gap-1 truncate rounded-full border border-border bg-muted px-2 py-1">
                               <MapPin className="size-3" aria-hidden />
-                              {reporte.ubicacion}
+                              <span className="truncate">{reporte.ubicacion}</span>
                             </span>
-                            <span>{reporte.fecha}</span>
+                            <span className="inline-flex items-center gap-1 rounded-full border border-border bg-muted px-2 py-1">
+                              <CalendarDays className="size-3" aria-hidden />
+                              {reporte.fecha}
+                            </span>
                           </div>
                         </div>
                       </div>
                       <div className="flex shrink-0 items-center gap-1.5">
-                        <Button variant="outline" size="sm" render={<Link to={`/reportes/${reporte.id}`} />} className="h-7 px-2.5 text-xs">
+                        <Button variant="outline" size="sm" render={<Link to={`/reportes/${reporte.id}`} />} className="h-8 px-2.5 text-sm">
                           Ver
                           <ArrowRight className="size-3" aria-hidden />
                         </Button>
                         {editable && (
-                          <Button size="sm" render={<Link to={`/reportes/${reporte.id}/editar`} />} className="h-7 px-2.5 text-xs">
+                          <Button size="sm" render={<Link to={`/reportes/${reporte.id}/editar`} />} className="h-8 px-2.5 text-sm">
                             <Pencil className="size-3" aria-hidden />
                             Editar
                           </Button>

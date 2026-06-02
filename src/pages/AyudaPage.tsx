@@ -40,7 +40,7 @@ export default function AyudaPage() {
                 <CardHeader className="gap-2 p-4">
                   <Icon className="size-5 text-primary" aria-hidden />
                   <CardTitle className="text-sm font-semibold">{c.title}</CardTitle>
-                  <CardDescription className="text-xs">{c.description}</CardDescription>
+                  <CardDescription className="text-sm">{c.description}</CardDescription>
                 </CardHeader>
               </Card>
             )
@@ -59,7 +59,7 @@ export default function AyudaPage() {
                     <HelpCircle className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden />
                     {faq.q}
                   </p>
-                  <p className="mt-1.5 pl-6 text-xs leading-relaxed text-muted-foreground">{faq.a}</p>
+                  <p className="mt-1.5 pl-6 text-sm leading-relaxed text-muted-foreground">{faq.a}</p>
                 </li>
               ))}
             </ul>

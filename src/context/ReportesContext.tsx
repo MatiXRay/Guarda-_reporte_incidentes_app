@@ -160,7 +160,7 @@ export function ReportesProvider({ children }: { children: ReactNode }) {
     if (data.mediaUrls !== undefined) body.imageUrls = data.mediaUrls
 
     const res = await apiFetch(`${import.meta.env.VITE_API_URL}/api/reports/${id}`, {
-      method: 'PATCH',
+      method: 'PUT',
       body: JSON.stringify(body),
     })
 

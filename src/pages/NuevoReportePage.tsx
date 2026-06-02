@@ -38,7 +38,7 @@ export default function NuevoReportePage() {
         variant="ghost"
         size="sm"
         render={<Link to="/reportes" />}
-        className="mb-3 h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+        className="mb-3 h-8 px-2 text-sm text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft className="size-3.5" aria-hidden />
         Mis reportes

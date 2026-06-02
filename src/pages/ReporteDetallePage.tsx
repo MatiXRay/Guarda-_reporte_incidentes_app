@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import {
   AlertTriangle,
@@ -12,6 +12,12 @@ import {
   Tag,
   Trash2,
 } from 'lucide-react'
+import { MapContainer, TileLayer, Marker } from 'react-leaflet'
+import L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
+import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
+import markerIcon from 'leaflet/dist/images/marker-icon.png'
+import markerShadow from 'leaflet/dist/images/marker-shadow.png'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -52,7 +58,7 @@ export default function ReporteDetallePage() {
         variant="ghost"
         size="sm"
         render={<Link to="/reportes" />}
-        className="mb-3 h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+        className="mb-3 h-8 px-2 text-sm text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft className="size-3.5" aria-hidden />
         Mis reportes
@@ -63,7 +69,7 @@ export default function ReporteDetallePage() {
           <div className="flex flex-wrap items-center gap-2">
             <Badge
               className={cn(
-                'h-5 rounded-full border-0 px-2 text-xs font-medium',
+                'h-5 rounded-full border-0 px-2 text-sm font-medium',
                 estadoBadgeStyles[reporte.estado]
               )}
             >
@@ -82,7 +88,13 @@ export default function ReporteDetallePage() {
 
           <dl className="grid grid-cols-2 gap-4">
             <Detalle icon={Tag} label="Categoría" value={reporte.categoria} />
-            <Detalle icon={MapPin} label="Ubicación" value={reporte.ubicacion} />
+            <div className="col-span-2">
+              <Detalle
+                icon={MapPin}
+                label="Ubicación"
+                value={<LocationMap lat={reporte.lat} lng={reporte.lng} />}
+              />
+            </div>
             <Detalle icon={CalendarDays} label="Fecha" value={reporte.fecha} />
             <Detalle icon={ClipboardList} label="Estado" value={reporte.estado} />
           </dl>
@@ -152,12 +164,12 @@ export default function ReporteDetallePage() {
 
           <div className="flex items-center justify-between gap-3">
             {editable ? (
-              <p className="text-xs text-muted-foreground">
+              <p className="text-sm text-muted-foreground">
                 Estado <span className="font-medium text-foreground">Pendiente</span>: podés
                 editarlo o eliminarlo.
               </p>
             ) : (
-              <p className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+              <p className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
                 <Lock className="size-3.5" aria-hidden />
                 Este reporte ya no se puede modificar.
               </p>
@@ -167,13 +179,13 @@ export default function ReporteDetallePage() {
               <div className="flex shrink-0 items-center gap-1.5">
                 {confirmDelete ? (
                   <>
-                    <span className="text-xs text-muted-foreground">¿Eliminar?</span>
+                    <span className="text-sm text-muted-foreground">¿Eliminar?</span>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => setConfirmDelete(false)}
                       disabled={deleting}
-                      className="h-7 px-2.5 text-xs"
+                      className="h-8 px-2.5 text-sm"
                     >
                       Cancelar
                     </Button>
@@ -181,7 +193,7 @@ export default function ReporteDetallePage() {
                       size="sm"
                       onClick={handleDelete}
                       disabled={deleting}
-                      className="h-7 px-2.5 text-xs bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      className="h-8 px-2.5 text-sm bg-destructive text-destructive-foreground hover:bg-destructive/90"
                     >
                       <Trash2 className="size-3" aria-hidden />
                       {deleting ? 'Eliminando…' : 'Confirmar'}
@@ -193,7 +205,7 @@ export default function ReporteDetallePage() {
                       variant="outline"
                       size="sm"
                       onClick={() => setConfirmDelete(true)}
-                      className="h-7 px-2.5 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
+                      className="h-8 px-2.5 text-sm text-destructive hover:bg-destructive/10 hover:text-destructive"
                     >
                       <Trash2 className="size-3" aria-hidden />
                       Eliminar
@@ -217,6 +229,38 @@ export default function ReporteDetallePage() {
   )
 }
 
+const DEFAULT_MAP_ZOOM = 16
+
+delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl
+L.Icon.Default.mergeOptions({
+  iconUrl: markerIcon,
+  iconRetinaUrl: markerIcon2x,
+  shadowUrl: markerShadow,
+})
+
+function LocationMap({ lat, lng }: { lat: number | null; lng: number | null }) {
+  if (lat === null || lng === null) {
+    return <p className="text-sm text-muted-foreground">No hay ubicación precisa disponible.</p>
+  }
+
+  return (
+    <div className="overflow-hidden rounded-xl border border-border">
+      <MapContainer
+        center={[lat, lng]}
+        zoom={DEFAULT_MAP_ZOOM}
+        style={{ height: '180px', width: '100%' }}
+        scrollWheelZoom={false}
+      >
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        <Marker position={[lat, lng]} />
+      </MapContainer>
+    </div>
+  )
+}
+
 function Detalle({
   icon: Icon,
   label,
@@ -224,16 +268,18 @@ function Detalle({
 }: {
   icon: typeof Tag
   label: string
-  value: string
+  value: ReactNode
 }) {
   return (
     <div className="flex items-start gap-2">
       <Icon className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" aria-hidden />
-      <div>
+      <div className="min-w-0 flex-1">
         <dt className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
           {label}
         </dt>
-        <dd className="mt-0.5 text-sm font-medium text-foreground">{value}</dd>
+        <dd className="mt-0.5 text-sm font-medium text-foreground min-w-0 w-full">
+          {value}
+        </dd>
       </div>
     </div>
   )

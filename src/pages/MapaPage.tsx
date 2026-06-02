@@ -17,7 +17,7 @@ export default function MapaPage() {
         <CardContent className="flex flex-col items-center justify-center gap-2 py-16 text-center">
           <Map className="size-8 text-muted-foreground" aria-hidden />
           <p className="text-sm font-semibold text-foreground">Próximamente</p>
-          <p className="max-w-sm text-xs text-muted-foreground">
+          <p className="max-w-sm text-sm text-muted-foreground">
             Estamos integrando el mapa interactivo con todos los reportes públicos de la ciudad.
           </p>
         </CardContent>
