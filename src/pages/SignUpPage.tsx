@@ -79,14 +79,14 @@ export default function SignUpPage() {
         <Card className="w-full max-w-[420px] border-0 shadow-none bg-transparent ring-0">
           <CardContent className="px-0 flex flex-col items-center gap-6">
             {/* Header text above Clerk widget */}
-            <div className="w-full text-center mb-1">
+            {/* <div className="w-full text-center mb-1">
               <h1 className="text-2xl font-bold tracking-tight text-foreground">
                 Creá tu cuenta
               </h1>
               <p className="text-sm text-muted-foreground mt-1">
                 Registrate gratis y comenzá a reportar incidentes
               </p>
-            </div>
+            </div> */}
 
             {/* Clerk embedded sign-up */}
             <SignUp
