@@ -27,14 +27,14 @@ export default function SignInPage() {
         <Card className="w-full max-w-105 border-0 shadow-none bg-transparent ring-0">
           <CardContent className="px-0 flex flex-col items-center gap-6">
             {/* Header text above Clerk widget */}
-            <div className="w-full text-center mb-1">
+            {/* <div className="w-full text-center mb-1">
               <h1 className="text-2xl font-bold tracking-tight text-foreground">
                 Iniciá sesión
               </h1>
               <p className="text-sm text-muted-foreground mt-1">
                 Accedé a tu cuenta para gestionar tus reportes
               </p>
-            </div>
+            </div> */}
 
             {/* Clerk embedded sign-in */}
             <SignIn

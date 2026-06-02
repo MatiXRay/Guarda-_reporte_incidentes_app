@@ -216,7 +216,7 @@ export default function AdminUsuariosPage() {
                                         ? 'border-border hover:bg-muted/30'
                                         : 'border-destructive/20 bg-destructive/5 opacity-75'
                                 )}>
-                                    <div className="flex items-center justify-between gap-4 p-4">
+                                    <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
                                         {/* Info */}
                                         <div className="flex items-center gap-3 min-w-0">
                                             <span className={cn(

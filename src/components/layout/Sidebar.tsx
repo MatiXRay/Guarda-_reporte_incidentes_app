@@ -24,6 +24,11 @@ type NavItem = {
   end?: boolean
 }
 
+type SidebarProps = {
+  open: boolean
+  onClose: () => void
+}
+
 const secondaryNav: NavItem[] = [
   { label: 'Configuración', icon: Settings, to: '/configuracion' },
   { label: 'Ayuda', icon: HelpCircle, to: '/ayuda' },
@@ -34,12 +39,10 @@ const reportesSubNav: NavItem[] = [
   { label: 'Nuevo Reporte', icon: PlusCircle, to: '/reportes/nuevo' },
 ]
 
-/* nav exclusiva para admin y superadmin */
 const adminNav: NavItem[] = [
   { label: 'Panel de reportes', icon: LayoutDashboard, to: '/admin/reportes', end: true },
 ]
 
-/* nav exclusiva para superadmin */
 const superadminNav: NavItem[] = [
   { label: 'Usuarios', icon: Users, to: '/admin/usuarios', end: true },
 ]
@@ -125,96 +128,120 @@ function ReportesSection() {
   )
 }
 
-export function Sidebar() {
+export function Sidebar({ open, onClose }: SidebarProps) {
   const { role } = useUserRole()
-
   const isAdmin = role === 'admin' || role === 'superadmin'
   const isSuperadmin = role === 'superadmin'
 
+  // contenido interno del sidebar — igual para desktop y mobile
+  const content = (
+    <nav className="scrollbar-soft flex h-full flex-col gap-1 overflow-y-auto px-3 py-4">
+      <p className="px-2.5 pb-1 text-[11px] font-semibold tracking-[0.12em] text-muted-foreground uppercase">
+        Menú
+      </p>
+      <ul className="flex flex-col gap-0.5">
+        <li>
+          <SidebarLink item={{ label: 'Inicio', icon: Home, to: '/dashboard', end: true }} />
+        </li>
+        <ReportesSection />
+        <li>
+          <SidebarLink item={{ label: 'Mapa', icon: Map, to: '/mapa' }} />
+        </li>
+      </ul>
+
+      {isAdmin && (
+        <>
+          <Separator className="my-3" />
+          <p className="px-2.5 pb-1 text-[11px] font-semibold tracking-[0.12em] text-muted-foreground uppercase">
+            Administración
+          </p>
+          <ul className="flex flex-col gap-0.5">
+            {adminNav.map((item) => (
+              <li key={item.label}>
+                <SidebarLink item={item} />
+              </li>
+            ))}
+            {isSuperadmin && (
+              <>
+                {superadminNav.map((item) => (
+                  <li key={item.label}>
+                    <SidebarLink item={item} />
+                  </li>
+                ))}
+              </>
+            )}
+          </ul>
+        </>
+      )}
+
+      <Separator className="my-3" />
+
+      <p className="px-2.5 pb-1 text-[11px] font-semibold tracking-[0.12em] text-muted-foreground uppercase">
+        Cuenta
+      </p>
+      <ul className="flex flex-col gap-0.5">
+        {secondaryNav.map((item) => (
+          <li key={item.label}>
+            <SidebarLink item={item} />
+          </li>
+        ))}
+      </ul>
+
+      {isAdmin && (
+        <div className="mt-auto rounded-lg bg-muted p-3">
+          <div className="flex items-center gap-1.5">
+            <ShieldCheck className="size-3.5 text-primary" aria-hidden />
+            <p className="text-xs font-semibold text-foreground capitalize">{role}</p>
+          </div>
+          <p className="mt-0.5 text-xs leading-snug text-muted-foreground">
+            Tenés acceso al panel de administración.
+          </p>
+        </div>
+      )}
+
+      {!isAdmin && (
+        <div className="mt-auto rounded-lg bg-muted p-3">
+          <p className="text-xs font-semibold text-foreground">
+            ¿Necesitás ayuda?
+          </p>
+          <p className="mt-0.5 text-xs leading-snug text-muted-foreground">
+            Llamanos al{' '}
+            <span className="font-semibold text-foreground">147</span> las 24 hs.
+          </p>
+        </div>
+      )}
+    </nav>
+  )
+
   return (
-    <aside
-      className="sticky top-14 hidden h-[calc(100vh-3.5rem)] w-52 shrink-0 border-r border-border lg:block"
-      aria-label="Navegación principal"
-    >
-      <nav className="scrollbar-soft flex h-full flex-col gap-1 overflow-y-auto px-3 py-4">
-        <p className="px-2.5 pb-1 text-[11px] font-semibold tracking-[0.12em] text-muted-foreground uppercase">
-          Menú
-        </p>
-        <ul className="flex flex-col gap-0.5">
-          <li>
-            <SidebarLink item={{ label: 'Inicio', icon: Home, to: '/dashboard', end: true }} />
-          </li>
-          <ReportesSection />
-          <li>
-            <SidebarLink item={{ label: 'Mapa', icon: Map, to: '/mapa' }} />
-          </li>
-        </ul>
+    <>
+      {/* overlay oscuro cuando el sidebar mobile está abierto */}
+      {open && (
+        <div
+          className="fixed inset-0 z-40 bg-black/40 lg:hidden"
+          onClick={onClose}
+          aria-hidden
+        />
+      )}
 
-        {/* Sección admin */}
-        {isAdmin && (
-          <>
-            <Separator className="my-3" />
-            <p className="px-2.5 pb-1 text-[11px] font-semibold tracking-[0.12em] text-muted-foreground uppercase">
-              Administración
-            </p>
-            <ul className="flex flex-col gap-0.5">
-              {adminNav.map((item) => (
-                <li key={item.label}>
-                  <SidebarLink item={item} />
-                </li>
-              ))}
-              {/* Sección superadmin */}
-              {isSuperadmin && (
-                <>
-                  {superadminNav.map((item) => (
-                    <li key={item.label}>
-                      <SidebarLink item={item} />
-                    </li>
-                  ))}
-                </>
-              )}
-            </ul>
-          </>
+      {/* sidebar desktop — siempre visible en lg+ */}
+      <aside
+        className="sticky top-14 hidden h-[calc(100vh-3.5rem)] w-52 shrink-0 border-r border-border lg:block"
+        aria-label="Navegación principal"
+      >
+        {content}
+      </aside>
+
+      {/* sidebar mobile — drawer que se desliza desde la izquierda */}
+      <aside
+        className={cn(
+          'fixed top-14 left-0 z-50 h-[calc(100vh-3.5rem)] w-64 border-r border-border bg-background shadow-lg transition-transform duration-300 lg:hidden',
+          open ? 'translate-x-0' : '-translate-x-full'
         )}
-
-        <Separator className="my-3" />
-
-        <p className="px-2.5 pb-1 text-[11px] font-semibold tracking-[0.12em] text-muted-foreground uppercase">
-          Cuenta
-        </p>
-        <ul className="flex flex-col gap-0.5">
-          {secondaryNav.map((item) => (
-            <li key={item.label}>
-              <SidebarLink item={item} />
-            </li>
-          ))}
-        </ul>
-
-        {/* Badge de rol */}
-        {isAdmin && (
-          <div className="mt-auto rounded-lg bg-muted p-3">
-            <div className="flex items-center gap-1.5">
-              <ShieldCheck className="size-3.5 text-primary" aria-hidden />
-              <p className="text-xs font-semibold text-foreground capitalize">{role}</p>
-            </div>
-            <p className="mt-0.5 text-xs leading-snug text-muted-foreground">
-              Tenés acceso al panel de administración.
-            </p>
-          </div>
-        )}
-
-        {!isAdmin && (
-          <div className="mt-auto rounded-lg bg-muted p-3">
-            <p className="text-xs font-semibold text-foreground">
-              ¿Necesitás ayuda?
-            </p>
-            <p className="mt-0.5 text-xs leading-snug text-muted-foreground">
-              Llamanos al{' '}
-              <span className="font-semibold text-foreground">147</span> las 24 hs.
-            </p>
-          </div>
-        )}
-      </nav>
-    </aside>
+        aria-label="Navegación principal"
+      >
+        {content}
+      </aside>
+    </>
   )
 }
