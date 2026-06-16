@@ -40,11 +40,34 @@ const MAP_BOUNDS: [[number, number], [number, number]] = [
 // Nominatim viewbox (lon_min,lat_min,lon_max,lat_max)
 const NOMINATIM_VIEWBOX = '-63.40,-32.52,-63.10,-32.30'
 
+type NominatimAddress = {
+  road?: string
+  pedestrian?: string
+  path?: string
+  house_number?: string
+  city?: string
+  town?: string
+  village?: string
+  municipality?: string
+  [key: string]: string | undefined
+}
+
+function formatNominatimAddress(addr: NominatimAddress): string {
+  const road = addr.road ?? addr.pedestrian ?? addr.path ?? ''
+  const number = addr.house_number ?? ''
+  const city = addr.city ?? addr.town ?? addr.village ?? addr.municipality ?? ''
+  return [road, number, city].filter(Boolean).join(', ')
+}
+
 async function reverseGeocode(lat: number, lng: number): Promise<string> {
-  const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`
+  const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&addressdetails=1`
   try {
     const res = await fetch(url, { headers: { 'Accept-Language': 'es' } })
     const data = await res.json()
+    if (data.address) {
+      const formatted = formatNominatimAddress(data.address)
+      if (formatted) return formatted
+    }
     return data.display_name ?? `${lat.toFixed(5)}, ${lng.toFixed(5)}`
   } catch {
     return `${lat.toFixed(5)}, ${lng.toFixed(5)}`
@@ -62,15 +85,18 @@ async function geocodeAddress(
     limit: '1',
     countrycodes: 'ar',
     'accept-language': 'es',
+    addressdetails: '1',
   })
   try {
     const res = await fetch(`https://nominatim.openstreetmap.org/search?${params}`)
     const data = await res.json()
     if (!data.length) return null
+    const addr = data[0].address as NominatimAddress | undefined
+    const formatted = addr ? formatNominatimAddress(addr) : ''
     return {
       lat: parseFloat(data[0].lat),
       lng: parseFloat(data[0].lon),
-      display_name: data[0].display_name,
+      display_name: formatted || (data[0].display_name as string),
     }
   } catch {
     return null

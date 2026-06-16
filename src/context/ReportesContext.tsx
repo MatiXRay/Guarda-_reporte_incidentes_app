@@ -26,6 +26,23 @@ export type Reporte = {
   mediaUrls: string[]
 }
 
+export type ReporteSimilar = {
+  id: string
+  titulo: string
+  descripcion: string
+  categoria: string
+  ubicacion: string
+  lat: number | null
+  lng: number | null
+  prioridad: string
+  adhesiones: number
+}
+
+export type CreateReporteResult =
+  | { tipo: 'creado'; reporte: Reporte }
+  | { tipo: 'duplicado'; message: string }
+  | { tipo: 'pendiente'; similares: ReporteSimilar[]; datosNormalizados: { title: string; description: string } }
+
 export const CATEGORIAS = [
   'Calles',
   'Alumbrado',
@@ -64,6 +81,21 @@ function backendToReporte(r: Record<string, unknown>): Reporte {
   }
 }
 
+function backendToSimilar(r: Record<string, unknown>): ReporteSimilar {
+  const location = r.location as { lat?: number; lng?: number; address?: string } | undefined
+  return {
+    id: r._id as string,
+    titulo: r.title as string,
+    descripcion: r.description as string,
+    categoria: r.category as string,
+    ubicacion: location?.address ?? '',
+    lat: location?.lat ?? null,
+    lng: location?.lng ?? null,
+    prioridad: (r.priority as string) ?? 'media',
+    adhesiones: (r.adhesiones as number) ?? 0,
+  }
+}
+
 function parseApiError(res: Response, body: Record<string, unknown>): string {
   if (res.status === 401) return 'No autorizado. Por favor iniciá sesión nuevamente.'
   if (res.status === 403) return 'No tenés permiso para realizar esta acción.'
@@ -73,6 +105,7 @@ function parseApiError(res: Response, body: Record<string, unknown>): string {
 
 type CreateReporteData = Omit<Reporte, 'id' | 'fecha' | 'estado' | 'autorId' | 'ubicacion'> & {
   address: string
+  forzarCreacion?: boolean
 }
 
 type UpdateReporteData = {
@@ -91,9 +124,10 @@ type ReportesContextValue = {
   error: string | null
   currentUserId: string | null
   getReporte: (id: string) => Reporte | undefined
-  createReporte: (data: CreateReporteData) => Promise<Reporte>
+  createReporte: (data: CreateReporteData) => Promise<CreateReporteResult>
   updateReporte: (id: string, data: UpdateReporteData) => Promise<Reporte>
   deleteReporte: (id: string) => Promise<void>
+  adherirReporte: (reporteId: string) => Promise<void>
   canEdit: (reporte: Reporte) => boolean
 }
 
@@ -126,13 +160,14 @@ export function ReportesProvider({ children }: { children: ReactNode }) {
     [reportes]
   )
 
-  const createReporte = useCallback(async ({ address, ...data }: CreateReporteData): Promise<Reporte> => {
+  const createReporte = useCallback(async ({ address, forzarCreacion, ...data }: CreateReporteData): Promise<CreateReporteResult> => {
     const body = {
       title: data.titulo,
       description: data.descripcion,
       category: data.categoria,
       location: { lat: data.lat, lng: data.lng, address },
       imageUrls: data.mediaUrls,
+      forzarCreacion,
     }
 
     const res = await apiFetch(`${import.meta.env.VITE_API_URL}/api/reports`, {
@@ -140,15 +175,28 @@ export function ReportesProvider({ children }: { children: ReactNode }) {
       body: JSON.stringify(body),
     })
 
-    if (!res.ok) {
-      const errBody = await res.json().catch(() => ({}))
-      throw new Error(parseApiError(res, errBody))
+    const resBody = await res.json().catch(() => ({})) as Record<string, unknown>
+
+    if (res.status === 409) {
+      return { tipo: 'duplicado', message: (resBody.message as string) ?? 'Ya tenés un reporte similar en esta zona' }
     }
 
-    const saved = await res.json()
-    const nuevo = backendToReporte(saved)
+    if (res.status === 200 && resBody.pendiente) {
+      const similares = (resBody.similares as Record<string, unknown>[]).map(backendToSimilar)
+      return {
+        tipo: 'pendiente',
+        similares,
+        datosNormalizados: resBody.datosNormalizados as { title: string; description: string },
+      }
+    }
+
+    if (!res.ok) {
+      throw new Error(parseApiError(res, resBody))
+    }
+
+    const nuevo = backendToReporte(resBody.report as Record<string, unknown>)
     setReportes((prev) => [nuevo, ...prev])
-    return nuevo
+    return { tipo: 'creado', reporte: nuevo }
   }, [])
 
   const updateReporte = useCallback(async (id: string, data: UpdateReporteData): Promise<Reporte> => {
@@ -188,7 +236,21 @@ export function ReportesProvider({ children }: { children: ReactNode }) {
     setReportes((prev) => prev.filter((r) => r.id !== id))
   }, [])
 
-  // All reports from /me belong to the current user; only estado matters for editability.
+  const adherirReporte = useCallback(async (reporteId: string): Promise<void> => {
+    const res = await apiFetch(`${import.meta.env.VITE_API_URL}/api/reports/${reporteId}/adherir`, {
+      method: 'POST',
+    })
+
+    if (!res.ok) {
+      const errBody = await res.json().catch(() => ({}))
+      throw new Error(parseApiError(res, errBody))
+    }
+
+    const data = await res.json() as Record<string, unknown>
+    const adherido = backendToReporte(data.reporteAdherido as Record<string, unknown>)
+    setReportes((prev) => [adherido, ...prev])
+  }, [])
+
   const canEdit = useCallback((r: Reporte) => r.estado === 'Pendiente', [])
 
   const value = useMemo<ReportesContextValue>(
@@ -201,9 +263,10 @@ export function ReportesProvider({ children }: { children: ReactNode }) {
       createReporte,
       updateReporte,
       deleteReporte,
+      adherirReporte,
       canEdit,
     }),
-    [reportes, loading, error, userId, getReporte, createReporte, updateReporte, deleteReporte, canEdit]
+    [reportes, loading, error, userId, getReporte, createReporte, updateReporte, deleteReporte, adherirReporte, canEdit]
   )
 
   return (

@@ -129,7 +129,7 @@ export default function HomePage() {
               {ultimos.map((reporte) => (
                 <li
                   key={reporte.id}
-                  className="flex items-center justify-between gap-4 px-4 py-4 first:pt-2 last:pb-2 transition-colors hover:bg-muted/40"
+                  className="flex flex-col gap-2 px-4 py-4 first:pt-2 last:pb-2 transition-colors hover:bg-muted/40 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-muted text-foreground/60">
@@ -140,7 +140,7 @@ export default function HomePage() {
                       <p className="text-sm text-muted-foreground">{reporte.fecha}</p>
                     </div>
                   </div>
-                  <div className="flex shrink-0 items-center gap-2">
+                  <div className="flex shrink-0 items-center gap-2 pl-11 sm:pl-0">
                     <Badge className={cn('h-5 rounded-full border-0 px-2 text-sm font-medium', estadoBadgeStyles[reporte.estado])}>
                       {reporte.estado}
                     </Badge>

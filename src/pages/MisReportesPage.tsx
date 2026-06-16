@@ -1,13 +1,18 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { AlertTriangle, ArrowRight, CalendarDays, ClipboardList, MapPin, Pencil, PlusCircle, Search } from 'lucide-react'
+import { AlertTriangle, ArrowRight, ClipboardList, MapPin, Pencil, Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { useReportes, type EstadoReporte } from '@/context/ReportesContext'
 import { estadoBadgeStyles } from '@/lib/reportes-ui'
 import { cn } from '@/lib/utils'
+
+const estadoDot: Record<EstadoReporte, string> = {
+  Pendiente: 'bg-yellow-400',
+  'En revisión': 'bg-primary',
+  Resuelto: 'bg-green-500',
+}
 
 type Filtro = 'Todos' | EstadoReporte
 const filtros: Filtro[] = ['Todos', 'Pendiente', 'En revisión', 'Resuelto']
@@ -111,47 +116,43 @@ export default function MisReportesPage() {
               const editable = canEdit(reporte)
               return (
                 <li key={reporte.id}>
-                  <Card className="border border-border shadow-none transition-colors hover:bg-muted/30">
-                    <div className="flex items-center justify-between gap-4 p-4">
-                      <div className="flex items-start gap-3 min-w-0">
-                        <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary/8 text-primary">
-                          <ClipboardList className="size-4" aria-hidden />
-                        </span>
+                  <Card className="border border-border shadow-sm transition-colors hover:bg-muted/30">
+                    <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
+                      {/* Fila superior: dot + contenido */}
+                      <div className="flex min-w-0 flex-1 items-center gap-3">
+                        <span className={cn('size-2 shrink-0 rounded-full', estadoDot[reporte.estado])} aria-hidden />
                         <div className="min-w-0">
-                          <div className="flex flex-wrap items-center gap-1.5">
-                            <Badge className={cn('h-5 rounded-full border-0 px-2 text-sm font-medium', estadoBadgeStyles[reporte.estado])}>
-                              {reporte.estado}
-                            </Badge>
-                            <span className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
-                              {reporte.categoria}
-                            </span>
-                          </div>
-                          <p className="text-[18px] mt-3 text-sm font-semibold leading-snug text-foreground">
-                            {reporte.titulo}
+                          <p className="text-base font-semibold text-foreground truncate">{reporte.titulo}</p>
+                          <p className="mt-0.5 text-sm text-muted-foreground">
+                            {reporte.categoria} · {reporte.fecha}
                           </p>
-                          <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                            <span className="inline-flex min-w-0 max-w-[18rem] items-center gap-1 truncate rounded-full border border-border bg-muted px-2 py-1">
-                              <MapPin className="size-3" aria-hidden />
+                          {reporte.ubicacion && (
+                            <div className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
+                              <MapPin className="size-3.5 shrink-0" aria-hidden />
                               <span className="truncate">{reporte.ubicacion}</span>
-                            </span>
-                            <span className="inline-flex items-center gap-1 rounded-full border border-border bg-muted px-2 py-1">
-                              <CalendarDays className="size-3" aria-hidden />
-                              {reporte.fecha}
-                            </span>
-                          </div>
+                            </div>
+                          )}
                         </div>
                       </div>
-                      <div className="flex shrink-0 items-center gap-1.5">
+
+                      {/* Acciones: en mobile debajo del contenido, en sm+ a la derecha */}
+                      <div className="flex shrink-0 items-center gap-2 pl-5 sm:pl-0">
+                        <span className={cn('whitespace-nowrap min-w-[84px] text-center rounded-md px-2.5 py-1 text-xs font-medium', estadoBadgeStyles[reporte.estado])}>
+                          {reporte.estado}
+                        </span>
                         <Button variant="outline" size="sm" render={<Link to={`/reportes/${reporte.id}`} />} className="h-8 px-2.5 text-sm">
                           Ver
                           <ArrowRight className="size-3" aria-hidden />
                         </Button>
-                        {editable && (
-                          <Button size="sm" render={<Link to={`/reportes/${reporte.id}/editar`} />} className="h-8 px-2.5 text-sm">
-                            <Pencil className="size-3" aria-hidden />
-                            Editar
-                          </Button>
-                        )}
+                        <Button
+                          size="sm"
+                          disabled={!editable}
+                          render={editable ? <Link to={`/reportes/${reporte.id}/editar`} /> : undefined}
+                          className="h-8 px-2.5 text-sm"
+                        >
+                          <Pencil className="size-3" aria-hidden />
+                          Editar
+                        </Button>
                       </div>
                     </div>
                   </Card>
