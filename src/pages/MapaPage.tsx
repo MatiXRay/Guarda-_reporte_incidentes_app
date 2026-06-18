@@ -5,10 +5,10 @@ export default function MapaPage() {
   return (
     <div className="animate-fade-up">
       <div className="mb-4">
-        <h1 className="font-heading text-xl font-semibold tracking-tight text-foreground">
+        <h1 className="font-heading text-3xl font-bold tracking-tight text-foreground">
           Mapa de incidentes
         </h1>
-        <p className="mt-0.5 text-sm text-muted-foreground">
+        <p className="mt-1 text-base text-muted-foreground">
           Visualizá los reportes de tu zona y de toda Villa María.
         </p>
       </div>

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { Search, Loader2 } from 'lucide-react'
+import { LocateFixed, Loader2, Search } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
@@ -128,6 +128,7 @@ export function MapPicker({ value, onChange }: Props) {
   const center: [number, number] = value ? [value.lat, value.lng] : DEFAULT_CENTER
   const [query, setQuery] = useState('')
   const [searching, setSearching] = useState(false)
+  const [locating, setLocating] = useState(false)
   const [searchError, setSearchError] = useState<string | null>(null)
   const [flyTarget, setFlyTarget] = useState<{ lat: number; lng: number } | null>(null)
 
@@ -145,6 +146,39 @@ export function MapPicker({ value, onChange }: Props) {
     onChange({ lat: result.lat, lng: result.lng, address: result.display_name })
   }
 
+  function handleLocateMe() {
+    if (!window.isSecureContext) {
+      setSearchError('Esta función requiere conexión segura (HTTPS). Buscá la dirección manualmente.')
+      return
+    }
+    if (!navigator.geolocation) {
+      setSearchError('Tu dispositivo no soporta geolocalización.')
+      return
+    }
+    setLocating(true)
+    setSearchError(null)
+    navigator.geolocation.getCurrentPosition(
+      async ({ coords }) => {
+        const { latitude: lat, longitude: lng } = coords
+        const address = await reverseGeocode(lat, lng)
+        setFlyTarget({ lat, lng })
+        onChange({ lat, lng, address })
+        setLocating(false)
+      },
+      (err) => {
+        const msg =
+          err.code === err.PERMISSION_DENIED
+            ? 'Permiso denegado. Habilitá la ubicación en la configuración del navegador.'
+            : err.code === err.TIMEOUT
+            ? 'La solicitud tardó demasiado. Intentá de nuevo.'
+            : 'No se pudo obtener tu ubicación.'
+        setSearchError(msg)
+        setLocating(false)
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    )
+  }
+
   return (
     <div className="flex flex-col gap-2">
       <div className="flex gap-2">
@@ -159,20 +193,33 @@ export function MapPicker({ value, onChange }: Props) {
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
             placeholder="Buscar dirección en Villa María…"
-            className="h-8 pl-8 text-sm"
+            className="h-10 pl-8 text-sm"
           />
         </div>
         <button
           type="button"
           onClick={handleSearch}
           disabled={searching || !query.trim()}
-          className="flex h-8 items-center gap-1.5 rounded-md border border-border bg-background px-3 text-xs font-medium transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex h-10 items-center gap-1.5 rounded-lg border border-border bg-background px-3 text-sm font-medium transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
         >
           {searching ? <Loader2 className="size-3.5 animate-spin" /> : 'Buscar'}
         </button>
       </div>
 
-      {searchError && <p className="text-xs text-destructive">{searchError}</p>}
+      {/* Botón de ubicación actual */}
+      <button
+        type="button"
+        onClick={handleLocateMe}
+        disabled={locating}
+        className="flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-primary/30 bg-primary/8 text-sm font-medium text-primary transition-colors hover:bg-primary/15 disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        {locating
+          ? <><Loader2 className="size-4 animate-spin" aria-hidden /> Obteniendo ubicación…</>
+          : <><LocateFixed className="size-4" aria-hidden /> Usar mi ubicación actual</>
+        }
+      </button>
+
+      {searchError && <p className="text-sm text-destructive">{searchError}</p>}
 
       <div className="overflow-hidden rounded-xl border border-border">
         <MapContainer

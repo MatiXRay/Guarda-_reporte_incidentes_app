@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link, useNavigate } from 'react-router-dom'
-import { ArrowLeft, PlusCircle, MapPin } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, PlusCircle, MapPin } from 'lucide-react'
 import { MapContainer, TileLayer, Marker } from 'react-leaflet'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -53,6 +53,7 @@ export default function NuevoReportePage() {
   const { createReporte, adherirReporte } = useReportes()
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [duplicadoMsg, setDuplicadoMsg] = useState<string | null>(null)
   const [pendiente, setPendiente] = useState<PendienteState | null>(null)
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
@@ -71,7 +72,7 @@ export default function NuevoReportePage() {
       })
 
       if (result.tipo === 'duplicado') {
-        setError(result.message)
+        setDuplicadoMsg(result.message)
         return
       }
 
@@ -150,10 +151,10 @@ export default function NuevoReportePage() {
       </Button>
 
       <div className="mb-4">
-        <h1 className="font-heading text-xl font-semibold tracking-tight text-foreground">
+        <h1 className="font-heading text-3xl font-bold tracking-tight text-foreground">
           Nuevo reporte
         </h1>
-        <p className="mt-0.5 text-sm text-muted-foreground">
+        <p className="mt-1 text-base text-muted-foreground">
           El reporte quedará en estado <span className="font-medium text-foreground">Pendiente</span> hasta que el equipo lo revise.
         </p>
       </div>
@@ -166,7 +167,7 @@ export default function NuevoReportePage() {
             </p>
           )}
           <ReporteForm
-            submitLabel={submitting ? 'Guardando…' : 'Crear reporte'}
+            submitLabel={submitting ? 'Analizando…' : 'Crear reporte'}
             submitIcon={<PlusCircle className="size-3.5" aria-hidden />}
             onSubmit={handleSubmit}
             onCancel={() => navigate('/reportes')}
@@ -174,6 +175,27 @@ export default function NuevoReportePage() {
           />
         </CardContent>
       </Card>
+
+      {/* Modal duplicado */}
+      {duplicadoMsg && createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="flex w-full max-w-sm flex-col gap-5 rounded-xl border border-border bg-background p-6 shadow-xl">
+            <div className="flex flex-col items-center gap-3 text-center">
+              <span className="flex size-14 items-center justify-center rounded-full bg-orange-100 text-orange-600">
+                <AlertTriangle className="size-7" aria-hidden />
+              </span>
+              <div>
+                <h2 className="font-heading text-base font-semibold text-foreground">Reporte duplicado detectado</h2>
+                <p className="mt-1.5 text-sm text-muted-foreground">{duplicadoMsg}</p>
+              </div>
+            </div>
+            <Button className="h-11 w-full rounded-xl text-sm font-semibold" onClick={() => setDuplicadoMsg(null)}>
+              Entendido
+            </Button>
+          </div>
+        </div>,
+        document.body
+      )}
 
       {/* Modal reportes similares — portal para evitar problemas con transforms del padre */}
       {pendiente && createPortal(
@@ -198,11 +220,10 @@ export default function NuevoReportePage() {
                   <button
                     key={s.id}
                     onClick={() => setSelectedId(isSelected ? null : s.id)}
-                    className={`w-full text-left rounded-lg border p-4 transition-colors ${
-                      isSelected
+                    className={`w-full text-left rounded-lg border p-4 transition-colors ${isSelected
                         ? 'border-primary bg-primary/5 ring-1 ring-primary'
                         : 'border-border hover:border-muted-foreground hover:bg-muted/30'
-                    }`}
+                      }`}
                   >
                     {/* Título y badges */}
                     <div className="flex items-start justify-between gap-2 mb-1.5">
@@ -266,7 +287,7 @@ export default function NuevoReportePage() {
             </div>
           </div>
         </div>
-      , document.body)}
+        , document.body)}
     </div>
   )
 }

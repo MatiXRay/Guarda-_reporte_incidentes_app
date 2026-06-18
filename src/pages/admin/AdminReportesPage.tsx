@@ -6,6 +6,7 @@ import {
   Check,
   ChevronRight,
   ClipboardList,
+  Film,
   ListFilter,
   MapPin,
   MoreHorizontal,
@@ -40,6 +41,7 @@ interface Reporte {
   esPrincipal: boolean
   adhesiones: number
   createdAt: string
+  imageUrls?: string[]
   aiAnalysis?: {
     severidad: string
     etiquetas: string[]
@@ -91,6 +93,12 @@ const priorityDot: Record<Priority, string> = {
   media: 'bg-yellow-400',
   alta: 'bg-orange-500',
   critica: 'bg-destructive',
+}
+
+const statusDot: Record<Status, string> = {
+  open: 'bg-yellow-400',
+  in_progress: 'bg-primary',
+  resolved: 'bg-emerald-500',
 }
 
 /* ------- utils ------- */
@@ -181,6 +189,14 @@ export default function AdminReportesPage() {
   const [detalleId, setDetalleId] = useState<string | null>(null)
   const [detalleReporte, setDetalleReporte] = useState<Reporte | null>(null)
   const [detalleLoading, setDetalleLoading] = useState(false)
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!lightboxUrl) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setLightboxUrl(null) }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [lightboxUrl])
 
   useEffect(() => {
     apiFetch(`${import.meta.env.VITE_API_URL}/api/reports`)
@@ -298,10 +314,10 @@ export default function AdminReportesPage() {
       {/* Header */}
       <header className="animate-fade-up flex items-center justify-between gap-4">
         <div>
-          <h1 className="font-heading text-xl font-semibold tracking-tight text-foreground">
+          <h1 className="font-heading text-3xl font-bold tracking-tight text-foreground">
             Panel de reportes
           </h1>
-          <p className="mt-0.5 text-sm text-muted-foreground">
+          <p className="mt-1 text-base text-muted-foreground">
             Gestioná el estado y prioridad de todos los reportes.
           </p>
         </div>
@@ -314,75 +330,69 @@ export default function AdminReportesPage() {
       </header>
 
       {/* Barra de herramientas */}
-      <section className="animate-fade-up [animation-delay:40ms] flex flex-wrap items-center gap-2">
+      <section className="animate-fade-up [animation-delay:40ms] flex items-center gap-2">
 
         {/* Búsqueda */}
-        <div className="relative min-w-0 flex-1 max-w-xs">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" aria-hidden />
+        <div className="relative min-w-0 flex-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
           <Input
             type="search"
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
-            placeholder="Buscar…"
-            className="h-8 pl-8 text-sm"
+            placeholder="Buscar por título, dirección…"
+            className="h-12 pl-10 text-base rounded-xl"
           />
         </div>
 
-        <div className="flex items-center gap-1.5 ml-auto">
+        {/* Botón Filtrar — icono */}
+        <button
+          ref={filterBtnRef}
+          onClick={() => openDropdown('filter')}
+          aria-label="Filtrar reportes"
+          className={cn(
+            'relative flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border transition-colors outline-none',
+            filterOpen || activeFilterCount > 0
+              ? 'border-primary bg-primary/8 text-primary'
+              : 'border-border bg-background text-foreground hover:bg-muted'
+          )}
+        >
+          <ListFilter className="size-5" aria-hidden />
+          {activeFilterCount > 0 && (
+            <span className="absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+              {activeFilterCount}
+            </span>
+          )}
+        </button>
 
-          {/* Botón Filtrar */}
-          <button
-            ref={filterBtnRef}
-            onClick={() => openDropdown('filter')}
-            className={cn(
-              'flex h-8 items-center gap-1.5 rounded-lg border px-3 text-sm font-medium transition-colors outline-none',
-              'focus-visible:ring-2 focus-visible:ring-ring/50',
-              filterOpen || activeFilterCount > 0
-                ? 'border-primary bg-primary/5 text-primary'
-                : 'border-border bg-background text-foreground/80 hover:bg-muted hover:text-foreground'
-            )}
-          >
-            <ListFilter className="size-3.5" aria-hidden />
-            Filtrar
-            {activeFilterCount > 0 && (
-              <span className="flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
-                {activeFilterCount}
-              </span>
-            )}
-          </button>
+        {/* Botón Ordenar — icono */}
+        <button
+          ref={sortBtnRef}
+          onClick={() => openDropdown('sort')}
+          aria-label="Ordenar reportes"
+          className={cn(
+            'flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border transition-colors outline-none',
+            sortOpen || orden !== 'recientes'
+              ? 'border-primary bg-primary/8 text-primary'
+              : 'border-border bg-background text-foreground hover:bg-muted'
+          )}
+        >
+          <ArrowUpDown className="size-5" aria-hidden />
+        </button>
 
-          {/* Botón Ordenar */}
-          <button
-            ref={sortBtnRef}
-            onClick={() => openDropdown('sort')}
-            className={cn(
-              'flex h-8 items-center gap-1.5 rounded-lg border px-3 text-sm font-medium transition-colors outline-none',
-              'focus-visible:ring-2 focus-visible:ring-ring/50',
-              sortOpen || orden !== 'recientes'
-                ? 'border-primary bg-primary/5 text-primary'
-                : 'border-border bg-background text-foreground/80 hover:bg-muted hover:text-foreground'
-            )}
-          >
-            <ArrowUpDown className="size-3.5" aria-hidden />
-            Ordenar
-          </button>
-
-          {/* Botón ... */}
-          <button
-            ref={moreBtnRef}
-            onClick={() => openDropdown('more')}
-            className={cn(
-              'flex size-8 items-center justify-center rounded-lg border transition-colors outline-none',
-              'focus-visible:ring-2 focus-visible:ring-ring/50',
-              moreOpen
-                ? 'border-primary bg-primary/5 text-primary'
-                : 'border-border bg-background text-foreground/80 hover:bg-muted hover:text-foreground'
-            )}
-            aria-label="Más opciones"
-          >
-            <MoreHorizontal className="size-4" aria-hidden />
-          </button>
-        </div>
+        {/* Botón ... */}
+        <button
+          ref={moreBtnRef}
+          onClick={() => openDropdown('more')}
+          aria-label="Más opciones"
+          className={cn(
+            'flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border transition-colors outline-none',
+            moreOpen
+              ? 'border-primary bg-primary/8 text-primary'
+              : 'border-border bg-background text-foreground hover:bg-muted'
+          )}
+        >
+          <MoreHorizontal className="size-5" aria-hidden />
+        </button>
       </section>
 
       {/* Portals de dropdowns — fuera del stacking context de animate-fade-up */}
@@ -598,39 +608,56 @@ export default function AdminReportesPage() {
                   {isOpen && detalleReporte && detalleReporte._id === reporte._id && (
                     <div className="border-t border-border bg-muted/10 px-4 py-4 space-y-4">
 
-                      <div className="flex flex-wrap items-center justify-between gap-3">
-                        <p className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">Gestionar reporte</p>
-                        <div className="flex items-center gap-2">
-                          <select
-                            value={detalleReporte.status}
-                            disabled={updatingId === reporte._id}
-                            onChange={(e) => handleStatusChange(reporte._id, e.target.value as Status)}
-                            className="h-8 rounded-md border border-border bg-background px-2 text-sm font-medium text-foreground outline-none focus:ring-2 focus:ring-ring/50 disabled:opacity-50"
-                            aria-label="Cambiar estado"
-                          >
-                            {STATUS_OPTIONS.map((s) => (
-                              <option key={s} value={s}>{statusLabel[s]}</option>
-                            ))}
-                          </select>
-                          <select
-                            value={detalleReporte.priority}
-                            disabled={updatingId === reporte._id}
-                            onChange={(e) => handlePriorityChange(reporte._id, e.target.value as Priority)}
-                            className="h-8 rounded-md border border-border bg-background px-2 text-sm font-medium text-foreground outline-none focus:ring-2 focus:ring-ring/50 disabled:opacity-50"
-                            aria-label="Cambiar prioridad"
-                          >
-                            {PRIORITY_OPTIONS.map((p) => (
-                              <option key={p} value={p}>{priorityLabel[p]}</option>
-                            ))}
-                          </select>
-                          <button
-                            onClick={() => { setDetalleId(null); setDetalleReporte(null) }}
-                            className="flex size-8 items-center justify-center rounded-md border border-border bg-background text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                            aria-label="Cerrar detalle"
-                          >
-                            <X className="size-3.5" />
-                          </button>
+                      {/* Gestionar — card destacada */}
+                      <div className="rounded-xl border border-primary/25 bg-primary/5 p-4">
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <p className="text-sm font-semibold text-primary">Gestionar reporte</p>
+                          <div className="flex flex-wrap items-center gap-3">
+                            <div className="flex items-center gap-1.5">
+                              <span className={cn('hidden size-2 shrink-0 rounded-full sm:block', statusDot[detalleReporte.status])} />
+                              <span className="hidden text-xs font-medium text-muted-foreground sm:block">Estado</span>
+                              <select
+                                value={detalleReporte.status}
+                                disabled={updatingId === reporte._id}
+                                onChange={(e) => handleStatusChange(reporte._id, e.target.value as Status)}
+                                className="h-9 rounded-lg border border-primary/20 bg-background px-2.5 text-sm font-medium text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/30 disabled:opacity-50"
+                                aria-label="Cambiar estado"
+                              >
+                                {STATUS_OPTIONS.map((s) => (
+                                  <option key={s} value={s}>{statusLabel[s]}</option>
+                                ))}
+                              </select>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <span className={cn('hidden size-2 shrink-0 rounded-full sm:block', priorityDot[detalleReporte.priority])} />
+                              <span className="hidden text-xs font-medium text-muted-foreground sm:block">Prioridad</span>
+                              <select
+                                value={detalleReporte.priority}
+                                disabled={updatingId === reporte._id}
+                                onChange={(e) => handlePriorityChange(reporte._id, e.target.value as Priority)}
+                                className="h-9 rounded-lg border border-primary/20 bg-background px-2.5 text-sm font-medium text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/30 disabled:opacity-50"
+                                aria-label="Cambiar prioridad"
+                              >
+                                {PRIORITY_OPTIONS.map((p) => (
+                                  <option key={p} value={p}>{priorityLabel[p]}</option>
+                                ))}
+                              </select>
+                            </div>
+                            <button
+                              onClick={() => { setDetalleId(null); setDetalleReporte(null) }}
+                              className="flex size-7 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-primary/10 hover:text-foreground"
+                              aria-label="Cerrar detalle"
+                            >
+                              <X className="size-4" />
+                            </button>
+                          </div>
                         </div>
+                        {updatingId === reporte._id && (
+                          <p className="mt-2 flex items-center gap-1.5 text-xs text-primary">
+                            <span className="size-3 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
+                            Guardando cambios…
+                          </p>
+                        )}
                       </div>
 
                       <div className="grid gap-4 lg:grid-cols-2">
@@ -689,6 +716,42 @@ export default function AdminReportesPage() {
                         </div>
 
                       </div>
+
+                      {/* Multimedia — full width debajo del grid */}
+                      {detalleReporte.imageUrls && detalleReporte.imageUrls.length > 0 && (
+                        <div className="rounded-lg border border-border bg-background p-3">
+                          <p className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase mb-2">
+                            Multimedia ({detalleReporte.imageUrls.length})
+                          </p>
+                          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">
+                            {detalleReporte.imageUrls.map((url) => {
+                              const isVideo = url.includes('/video/upload/') || /\.(mp4|mov|webm)(\?|$)/i.test(url)
+                              return (
+                                <div key={url} className="relative aspect-square overflow-hidden rounded-lg border border-border bg-muted">
+                                  {isVideo ? (
+                                    <>
+                                      <video src={url} className="h-full w-full object-cover" muted playsInline controls />
+                                      <span className="absolute left-1 top-1 flex items-center gap-0.5 rounded bg-black/60 px-1 py-0.5 text-[10px] text-white pointer-events-none">
+                                        <Film className="size-2.5" aria-hidden />
+                                        Video
+                                      </span>
+                                    </>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={() => setLightboxUrl(url)}
+                                      className="block h-full w-full focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                                      aria-label="Ampliar imagen"
+                                    >
+                                      <img src={url} alt="Foto del reporte" className="h-full w-full object-cover transition-opacity hover:opacity-90" />
+                                    </button>
+                                  )}
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </li>
@@ -697,6 +760,33 @@ export default function AdminReportesPage() {
           </ul>
         )}
       </section>
+
+      {/* Lightbox */}
+      {lightboxUrl && createPortal(
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"
+          onClick={() => setLightboxUrl(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Vista ampliada"
+        >
+          <button
+            type="button"
+            onClick={() => setLightboxUrl(null)}
+            aria-label="Cerrar"
+            className="absolute right-4 top-4 flex size-10 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors"
+          >
+            <X className="size-5" />
+          </button>
+          <img
+            src={lightboxUrl}
+            alt="Vista ampliada"
+            onClick={(e) => e.stopPropagation()}
+            className="max-h-[90vh] max-w-full rounded-lg object-contain shadow-2xl"
+          />
+        </div>,
+        document.body
+      )}
     </div>
   )
 }

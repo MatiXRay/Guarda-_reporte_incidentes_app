@@ -26,12 +26,12 @@ export default function AyudaPage() {
   return (
     <div className="animate-fade-up mx-auto max-w-2xl flex flex-col gap-6">
       <div>
-        <h1 className="font-heading text-xl font-semibold tracking-tight text-foreground">Ayuda</h1>
-        <p className="mt-0.5 text-sm text-muted-foreground">Resolvé tus dudas o contactá al equipo de soporte.</p>
+        <h1 className="font-heading text-3xl font-bold tracking-tight text-foreground">Ayuda</h1>
+        <p className="mt-1 text-base text-muted-foreground">Resolvé tus dudas o contactá al equipo de soporte.</p>
       </div>
 
       <section aria-labelledby="contacto-title">
-        <h2 id="contacto-title" className="mb-2 text-sm font-semibold text-foreground">Contacto rápido</h2>
+        <h2 id="contacto-title" className="mb-3 text-base font-semibold text-foreground">Contacto rápido</h2>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
           {contactos.map((c) => {
             const Icon = c.icon
@@ -49,7 +49,7 @@ export default function AyudaPage() {
       </section>
 
       <section aria-labelledby="faq-title">
-        <h2 id="faq-title" className="mb-2 text-sm font-semibold text-foreground">Preguntas frecuentes</h2>
+        <h2 id="faq-title" className="mb-3 text-base font-semibold text-foreground">Preguntas frecuentes</h2>
         <Card className="border border-border shadow-none">
           <CardContent className="p-0">
             <ul className="divide-y divide-border">

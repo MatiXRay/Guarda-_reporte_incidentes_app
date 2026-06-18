@@ -1,6 +1,6 @@
 import { UserButton, useUser } from '@clerk/clerk-react'
 import { Plus, ShieldAlert, Menu } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 
 type HeaderProps = {
@@ -9,6 +9,9 @@ type HeaderProps = {
 
 export function Header({ onMenuClick }: HeaderProps) {
   const { user } = useUser()
+  const { pathname } = useLocation()
+  const isDashboard = pathname === '/dashboard'
+  const isNuevoReporte = pathname === '/reportes/nuevo'
   const displayName =
     user?.firstName ??
     user?.fullName ??
@@ -49,14 +52,15 @@ export function Header({ onMenuClick }: HeaderProps) {
         </div>
 
         <div className="flex items-center gap-3">
-          <Button
-            size="sm"
-            render={<Link to="/reportes/nuevo" />}
-            className="rounded-md bg-brand px-3 text-sm font-medium text-brand-foreground hover:bg-[oklch(0.62_0.14_60)]"
-          >
-            <Plus className="size-3.5" aria-hidden />
-            Nuevo Reporte
-          </Button>
+          {!isDashboard && !isNuevoReporte && (
+            <Button
+              render={<Link to="/reportes/nuevo" />}
+              className="h-10 rounded-xl bg-brand px-4 text-sm font-semibold text-brand-foreground hover:bg-[oklch(0.62_0.14_60)]"
+            >
+              <Plus className="size-4" aria-hidden />
+              Nuevo Reporte
+            </Button>
+          )}
 
           <div className="flex items-center gap-2">
             <UserButton

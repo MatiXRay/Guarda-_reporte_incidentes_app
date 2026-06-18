@@ -68,9 +68,8 @@ export default function HomePage() {
           Reportá problemas en tu barrio de forma simple y ayudá a mantener Villa María en buen estado.
         </p>
         <Button
-          size="lg"
           render={<Link to="/reportes/nuevo" />}
-          className="mt-5 w-full sm:w-auto"
+          className="mt-5 h-14 w-full rounded-xl px-8 text-base font-semibold sm:w-auto"
         >
           Nuevo reporte
         </Button>

@@ -1,5 +1,5 @@
 import { useRef, useState, type ChangeEvent } from 'react'
-import { ImagePlus, Video, X, Loader2, Film } from 'lucide-react'
+import { Camera, Images, X, Loader2, Film } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as string
@@ -54,6 +54,7 @@ export function ImageUpload({ value, onChange }: Props) {
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const cameraRef = useRef<HTMLInputElement>(null)
 
   const imageCount = value.filter((u) => !isVideoUrl(u)).length
   const hasVideo = value.some(isVideoUrl)
@@ -154,43 +155,67 @@ export function ImageUpload({ value, onChange }: Props) {
       )}
 
       {canAddMore && (
-        <button
-          type="button"
-          onClick={() => inputRef.current?.click()}
-          disabled={uploading}
-          className={cn(
-            'flex h-24 w-full flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border',
-            'text-muted-foreground transition-colors hover:border-primary hover:bg-muted/50',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-            uploading && 'cursor-not-allowed opacity-60'
-          )}
-        >
-          {uploading ? (
-            <>
-              <Loader2 className="size-5 animate-spin" />
-              <span className="text-xs">Subiendo…</span>
-            </>
-          ) : (
-            <>
-              <div className="flex items-center gap-2">
-                <ImagePlus className="size-5" aria-hidden />
-                <span className="text-xs text-muted-foreground/60">/</span>
-                <Video className="size-5" aria-hidden />
-              </div>
-              <span className="text-xs font-medium">Subir foto o video</span>
-              <span className="text-xs text-muted-foreground/70">
-                Hasta {MAX_IMAGES} imágenes · 1 video (máx. {MAX_VIDEO_DURATION_SEC}s)
-              </span>
-            </>
-          )}
-        </button>
+        uploading ? (
+          <div className="flex h-16 w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border text-muted-foreground">
+            <Loader2 className="size-5 animate-spin" />
+            <span className="text-sm">Subiendo…</span>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2">
+            <div className="grid grid-cols-2 gap-2">
+              {/* Cámara — abre la cámara del dispositivo directamente */}
+              <button
+                type="button"
+                onClick={() => cameraRef.current?.click()}
+                className={cn(
+                  'flex h-14 items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border',
+                  'text-sm font-medium text-muted-foreground transition-colors',
+                  'hover:border-primary hover:text-primary hover:bg-primary/5',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+                )}
+              >
+                <Camera className="size-5" aria-hidden />
+                Cámara
+              </button>
+
+              {/* Galería — abre el selector de archivos normal */}
+              <button
+                type="button"
+                onClick={() => inputRef.current?.click()}
+                className={cn(
+                  'flex h-14 items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border',
+                  'text-sm font-medium text-muted-foreground transition-colors',
+                  'hover:border-primary hover:text-primary hover:bg-primary/5',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+                )}
+              >
+                <Images className="size-5" aria-hidden />
+                Galería
+              </button>
+            </div>
+            <p className="text-center text-xs text-muted-foreground">
+              Hasta {MAX_IMAGES} imágenes · 1 video (máx. {MAX_VIDEO_DURATION_SEC}s)
+            </p>
+          </div>
+        )
       )}
 
+      {/* Input galería: fotos, videos, selección múltiple */}
       <input
         ref={inputRef}
         type="file"
         accept="image/*,video/*"
         multiple
+        className="hidden"
+        onChange={handleFiles}
+      />
+
+      {/* Input cámara: abre directamente la cámara trasera */}
+      <input
+        ref={cameraRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
         className="hidden"
         onChange={handleFiles}
       />

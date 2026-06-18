@@ -1,4 +1,13 @@
-import { useState, type FormEvent, type ReactNode } from 'react'
+import React, { useState, type ReactNode } from 'react'
+import {
+  Car,
+  CircleHelp,
+  Construction,
+  Leaf,
+  Lightbulb,
+  Trash2,
+  type LucideIcon,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -25,6 +34,15 @@ type Props = {
   onSubmit: (values: ReporteFormValues) => void
   onCancel: () => void
   disabled?: boolean
+}
+
+const CATEGORIA_ICON: Record<string, LucideIcon> = {
+  'Calles':          Construction,
+  'Alumbrado':       Lightbulb,
+  'Higiene urbana':  Trash2,
+  'Tránsito':        Car,
+  'Espacios verdes': Leaf,
+  'Otro':            CircleHelp,
 }
 
 const empty: ReporteFormValues = {
@@ -60,7 +78,7 @@ export function ReporteForm({ initialValues, submitLabel, submitIcon, onSubmit, 
     return Object.keys(next).length === 0
   }
 
-  function handleSubmit(e: FormEvent) {
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     if (!validate()) return
     onSubmit({
@@ -75,7 +93,8 @@ export function ReporteForm({ initialValues, submitLabel, submitIcon, onSubmit, 
   }
 
   return (
-    <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
+    <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-6">
+
       {/* Título */}
       <Field id="titulo" label="Título" error={errors.titulo}>
         <Input
@@ -85,16 +104,17 @@ export function ReporteForm({ initialValues, submitLabel, submitIcon, onSubmit, 
           placeholder="Bache en Av. Sabattini"
           aria-invalid={Boolean(errors.titulo)}
           autoComplete="off"
-          className="h-9 text-sm"
+          className="h-12 rounded-xl text-base"
           maxLength={80}
         />
       </Field>
 
       {/* Categoría */}
       <Field id="categoria" label="Categoría">
-        <div className="flex flex-wrap gap-1.5">
+        <div className="grid grid-cols-3 gap-2">
           {CATEGORIAS.map((cat) => {
             const active = values.categoria === cat
+            const Icon = CATEGORIA_ICON[cat] ?? CircleHelp
             return (
               <button
                 key={cat}
@@ -102,14 +122,15 @@ export function ReporteForm({ initialValues, submitLabel, submitIcon, onSubmit, 
                 onClick={() => setField('categoria', cat)}
                 aria-pressed={active}
                 className={cn(
-                  'h-7 rounded-full border px-3 text-xs font-medium transition-colors outline-none',
+                  'flex flex-col items-center gap-2 rounded-xl border-2 px-2 py-3 text-center transition-colors outline-none',
                   'focus-visible:ring-2 focus-visible:ring-ring/50',
                   active
-                    ? 'border-primary bg-primary text-primary-foreground'
-                    : 'border-border bg-background text-foreground/70 hover:bg-muted hover:text-foreground'
+                    ? 'border-primary bg-primary/8 text-primary'
+                    : 'border-border bg-background text-foreground/60 hover:border-primary/40 hover:bg-muted hover:text-foreground'
                 )}
               >
-                {cat}
+                <Icon className="size-6 shrink-0" aria-hidden />
+                <span className="text-xs font-medium leading-tight">{cat}</span>
               </button>
             )
           })}
@@ -123,7 +144,7 @@ export function ReporteForm({ initialValues, submitLabel, submitIcon, onSubmit, 
           onChange={handleLocationPick}
         />
         {values.address && (
-          <p className="mt-1 truncate text-xs text-muted-foreground">📍 {values.address}</p>
+          <p className="mt-1.5 truncate text-sm text-muted-foreground">📍 {values.address}</p>
         )}
       </Field>
 
@@ -135,7 +156,7 @@ export function ReporteForm({ initialValues, submitLabel, submitIcon, onSubmit, 
           onChange={(e) => setField('descripcion', e.target.value)}
           placeholder="Describí el incidente con tus palabras"
           aria-invalid={Boolean(errors.descripcion)}
-          className="min-h-24 text-sm"
+          className="min-h-[120px] rounded-xl text-base"
           maxLength={1000}
         />
       </Field>
@@ -145,11 +166,20 @@ export function ReporteForm({ initialValues, submitLabel, submitIcon, onSubmit, 
         <ImageUpload value={values.mediaUrls} onChange={(urls) => setField('mediaUrls', urls)} />
       </Field>
 
-      <div className="flex justify-end gap-2 border-t border-border pt-4">
-        <Button type="button" variant="outline" size="sm" onClick={onCancel}>
+      <div className="flex gap-3 border-t border-border pt-5">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onCancel}
+          className="h-12 flex-1 rounded-xl text-base"
+        >
           Cancelar
         </Button>
-        <Button type="submit" size="sm" disabled={disabled} className="bg-brand text-brand-foreground hover:bg-[oklch(0.62_0.14_60)]">
+        <Button
+          type="submit"
+          disabled={disabled}
+          className="h-12 flex-1 rounded-xl text-base font-semibold bg-brand text-brand-foreground hover:bg-[oklch(0.62_0.14_60)]"
+        >
           {submitIcon}
           {submitLabel}
         </Button>
@@ -164,11 +194,11 @@ function Field({
   id: string; label: string; hint?: string; error?: string; children: ReactNode
 }) {
   return (
-    <div className="flex flex-col gap-1.5">
-      <Label htmlFor={id} className="text-sm font-medium text-foreground">{label}</Label>
+    <div className="flex flex-col gap-2">
+      <Label htmlFor={id} className="text-base font-medium text-foreground">{label}</Label>
       {children}
-      {hint && !error && <p className="text-xs text-muted-foreground">{hint}</p>}
-      {error && <p className="text-xs font-medium text-destructive">{error}</p>}
+      {hint && !error && <p className="text-sm text-muted-foreground">{hint}</p>}
+      {error && <p className="text-sm font-medium text-destructive">{error}</p>}
     </div>
   )
 }

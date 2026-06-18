@@ -1,6 +1,16 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
-import { AlertTriangle, ChevronRight, ClipboardList, MapPin, Search } from 'lucide-react'
+import {
+  AlertTriangle,
+  ArrowUpDown,
+  Check,
+  ChevronRight,
+  ClipboardList,
+  ListFilter,
+  MapPin,
+  Search,
+} from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { useReportes, type EstadoReporte } from '@/context/ReportesContext'
@@ -13,17 +23,70 @@ const estadoDot: Record<EstadoReporte, string> = {
   Resuelto:      'bg-green-500',
 }
 
-type Filtro = 'Todos' | EstadoReporte
-const filtros: Filtro[] = ['Todos', 'Pendiente', 'En revisión', 'Resuelto']
+const ESTADOS: EstadoReporte[] = ['Pendiente', 'En revisión', 'Resuelto']
+
+function toggle<T>(arr: T[], val: T): T[] {
+  return arr.includes(val) ? arr.filter((x) => x !== val) : [...arr, val]
+}
+
+function CheckRow({ checked, label, dot, onChange }: {
+  checked: boolean; label: string; dot?: string; onChange: () => void
+}) {
+  return (
+    <button
+      type="button"
+      role="checkbox"
+      aria-checked={checked}
+      onClick={onChange}
+      className="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-sm text-foreground transition-colors hover:bg-muted"
+    >
+      <span className={cn(
+        'flex size-4 shrink-0 items-center justify-center rounded border transition-colors',
+        checked ? 'border-primary bg-primary' : 'border-border bg-background'
+      )}>
+        {checked && <Check className="size-2.5 text-primary-foreground" strokeWidth={3} />}
+      </span>
+      {dot && <span className={cn('size-2 shrink-0 rounded-full', dot)} />}
+      {label}
+    </button>
+  )
+}
 
 export default function MisReportesPage() {
   const { reportes, loading, error } = useReportes()
-  const [filtro, setFiltro] = useState<Filtro>('Todos')
   const [busqueda, setBusqueda] = useState('')
+  const [filtrosEstado, setFiltrosEstado] = useState<EstadoReporte[]>([])
+  const [filtrosCategorias, setFiltrosCategorias] = useState<string[]>([])
+  const [orden, setOrden] = useState<'recientes' | 'antiguos'>('recientes')
 
+  /* refs para portales */
+  const filterBtnRef = useRef<HTMLButtonElement>(null)
+  const sortBtnRef   = useRef<HTMLButtonElement>(null)
+  const [filterOpen, setFilterOpen] = useState(false)
+  const [sortOpen,   setSortOpen]   = useState(false)
+  const [filterRect, setFilterRect] = useState<DOMRect | null>(null)
+  const [sortRect,   setSortRect]   = useState<DOMRect | null>(null)
+
+  function openDropdown(which: 'filter' | 'sort') {
+    const rect = (which === 'filter' ? filterBtnRef : sortBtnRef).current?.getBoundingClientRect() ?? null
+    if (which === 'filter') {
+      setFilterRect(rect); setFilterOpen((v) => !v); setSortOpen(false)
+    } else {
+      setSortRect(rect); setSortOpen((v) => !v); setFilterOpen(false)
+    }
+  }
+
+  /* categorías disponibles */
+  const categorias = useMemo(
+    () => [...new Set(reportes.map((r) => r.categoria))].sort(),
+    [reportes]
+  )
+
+  /* filtrado + ordenamiento */
   const filtrados = useMemo(() => {
-    return reportes.filter((r) => {
-      if (filtro !== 'Todos' && r.estado !== filtro) return false
+    let result = reportes.filter((r) => {
+      if (filtrosEstado.length > 0 && !filtrosEstado.includes(r.estado)) return false
+      if (filtrosCategorias.length > 0 && !filtrosCategorias.includes(r.categoria)) return false
       if (busqueda.trim()) {
         const q = busqueda.toLowerCase()
         return (
@@ -34,53 +97,68 @@ export default function MisReportesPage() {
       }
       return true
     })
-  }, [reportes, filtro, busqueda])
+    if (orden === 'antiguos') result = [...result].reverse()
+    return result
+  }, [reportes, filtrosEstado, filtrosCategorias, busqueda, orden])
+
+  const activeFilterCount = filtrosEstado.length + filtrosCategorias.length
 
   return (
     <div className="flex flex-col gap-6">
 
       {/* Header */}
       <header className="animate-fade-up">
-        <h1 className="font-heading text-xl font-semibold tracking-tight text-foreground">
+        <h1 className="font-heading text-3xl font-bold tracking-tight text-foreground">
           Mis reportes
         </h1>
       </header>
 
-      {/* Filtros */}
-      <section className="animate-fade-up [animation-delay:40ms] flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative w-full max-w-xs">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" aria-hidden />
+      {/* Toolbar */}
+      <section className="animate-fade-up [animation-delay:40ms] flex items-center gap-2">
+        {/* Búsqueda */}
+        <div className="relative min-w-0 flex-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
           <Input
             type="search"
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
-            placeholder="Buscar reportes…"
+            placeholder="Buscar por título, dirección…"
             aria-label="Buscar reportes"
-            className="h-9 pl-8 text-sm"
+            className="h-12 pl-10 text-base rounded-xl"
           />
         </div>
-        <div role="tablist" aria-label="Filtrar por estado" className="flex flex-wrap items-center gap-1.5">
-          {filtros.map((f) => {
-            const active = filtro === f
-            return (
-              <button
-                key={f}
-                role="tab"
-                aria-selected={active}
-                onClick={() => setFiltro(f)}
-                className={cn(
-                  'h-9 rounded-full border px-3 text-sm font-medium transition-colors outline-none',
-                  'focus-visible:ring-2 focus-visible:ring-ring/50',
-                  active
-                    ? 'border-primary bg-primary text-primary-foreground'
-                    : 'border-border bg-background text-foreground/70 hover:bg-muted hover:text-foreground'
-                )}
-              >
-                {f}
-              </button>
-            )
-          })}
-        </div>
+
+        {/* Filtrar — icono */}
+        <button
+          ref={filterBtnRef}
+          type="button"
+          onClick={() => openDropdown('filter')}
+          aria-label="Filtrar reportes"
+          className={cn(
+            'relative inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border transition-colors',
+            activeFilterCount > 0
+              ? 'border-primary bg-primary/8 text-primary'
+              : 'border-border bg-background text-foreground hover:bg-muted'
+          )}
+        >
+          <ListFilter className="size-5" aria-hidden />
+          {activeFilterCount > 0 && (
+            <span className="absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+              {activeFilterCount}
+            </span>
+          )}
+        </button>
+
+        {/* Ordenar — icono */}
+        <button
+          ref={sortBtnRef}
+          type="button"
+          onClick={() => openDropdown('sort')}
+          aria-label="Ordenar reportes"
+          className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-border bg-background text-foreground transition-colors hover:bg-muted"
+        >
+          <ArrowUpDown className="size-5" aria-hidden />
+        </button>
       </section>
 
       {/* Lista */}
@@ -110,7 +188,6 @@ export default function MisReportesPage() {
                   className="flex w-full items-center gap-3 px-4 py-4 transition-colors hover:bg-muted/40"
                 >
                   <span className={cn('size-2 shrink-0 rounded-full', estadoDot[reporte.estado])} aria-hidden />
-
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-base font-semibold text-foreground">{reporte.titulo}</p>
                     <p className="mt-0.5 text-sm text-muted-foreground">
@@ -123,7 +200,6 @@ export default function MisReportesPage() {
                       </div>
                     )}
                   </div>
-
                   <div className="flex shrink-0 items-center gap-2">
                     <span className={cn('whitespace-nowrap rounded-md px-2.5 py-1 text-xs font-medium', estadoBadgeStyles[reporte.estado])}>
                       {reporte.estado}
@@ -136,6 +212,97 @@ export default function MisReportesPage() {
           </ul>
         )}
       </section>
+
+      {/* Portal: dropdown Filtrar */}
+      {filterOpen && filterRect && createPortal(
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setFilterOpen(false)} />
+          <div
+            className="fixed z-50 w-60 rounded-xl border border-border bg-background p-3 shadow-lg"
+            style={{ top: filterRect.bottom + 6, right: window.innerWidth - filterRect.right }}
+          >
+            {/* Estado */}
+            <p className="mb-1 px-2 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
+              Estado
+            </p>
+            {ESTADOS.map((e) => (
+              <CheckRow
+                key={e}
+                checked={filtrosEstado.includes(e)}
+                label={e}
+                dot={estadoDot[e]}
+                onChange={() => setFiltrosEstado((prev) => toggle(prev, e))}
+              />
+            ))}
+
+            {/* Categoría */}
+            {categorias.length > 0 && (
+              <>
+                <div className="my-2 border-t border-border" />
+                <p className="mb-1 px-2 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
+                  Categoría
+                </p>
+                {categorias.map((cat) => (
+                  <CheckRow
+                    key={cat}
+                    checked={filtrosCategorias.includes(cat)}
+                    label={cat}
+                    onChange={() => setFiltrosCategorias((prev) => toggle(prev, cat))}
+                  />
+                ))}
+              </>
+            )}
+
+            {/* Limpiar */}
+            {activeFilterCount > 0 && (
+              <>
+                <div className="my-2 border-t border-border" />
+                <button
+                  type="button"
+                  onClick={() => { setFiltrosEstado([]); setFiltrosCategorias([]) }}
+                  className="w-full rounded-md px-2 py-1.5 text-left text-sm text-destructive hover:bg-destructive/8 transition-colors"
+                >
+                  Limpiar filtros
+                </button>
+              </>
+            )}
+          </div>
+        </>,
+        document.body
+      )}
+
+      {/* Portal: dropdown Ordenar */}
+      {sortOpen && sortRect && createPortal(
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setSortOpen(false)} />
+          <div
+            className="fixed z-50 w-48 rounded-xl border border-border bg-background p-2 shadow-lg"
+            style={{ top: sortRect.bottom + 6, right: window.innerWidth - sortRect.right }}
+          >
+            {([
+              { value: 'recientes', label: 'Más recientes' },
+              { value: 'antiguos',  label: 'Más antiguos' },
+            ] as const).map(({ value, label }) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => { setOrden(value); setSortOpen(false) }}
+                className={cn(
+                  'flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors',
+                  orden === value
+                    ? 'bg-primary/8 font-medium text-primary'
+                    : 'text-foreground hover:bg-muted'
+                )}
+              >
+                {orden === value && <Check className="size-3.5 text-primary" strokeWidth={3} />}
+                {label}
+              </button>
+            ))}
+          </div>
+        </>,
+        document.body
+      )}
+
     </div>
   )
 }

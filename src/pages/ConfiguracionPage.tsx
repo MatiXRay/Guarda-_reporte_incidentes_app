@@ -18,8 +18,8 @@ export default function ConfiguracionPage() {
   return (
     <div className="animate-fade-up mx-auto max-w-2xl flex flex-col gap-6">
       <div>
-        <h1 className="font-heading text-xl font-semibold tracking-tight text-foreground">Configuración</h1>
-        <p className="mt-0.5 text-sm text-muted-foreground">Gestioná tus datos, preferencias y seguridad.</p>
+        <h1 className="font-heading text-3xl font-bold tracking-tight text-foreground">Configuración</h1>
+        <p className="mt-1 text-base text-muted-foreground">Gestioná tus datos, preferencias y seguridad.</p>
       </div>
 
       <Card className="border border-border shadow-none">

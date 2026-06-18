@@ -141,10 +141,10 @@ export default function AdminUsuariosPage() {
             {/* Header */}
             <header className="animate-fade-up flex items-center justify-between gap-4">
                 <div>
-                    <h1 className="font-heading text-xl font-semibold tracking-tight text-foreground">
+                    <h1 className="font-heading text-3xl font-bold tracking-tight text-foreground">
                         Gestión de usuarios
                     </h1>
-                    <p className="mt-0.5 text-sm text-muted-foreground">
+                    <p className="mt-1 text-base text-muted-foreground">
                         Administrá roles y usuarios del sistema.
                     </p>
                 </div>
