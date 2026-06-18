@@ -1,14 +1,14 @@
 import { SignIn } from '@clerk/clerk-react'
 import { Link } from 'react-router-dom'
-import { Card, CardContent } from '@/components/ui/card'
 import { GuardaLogo } from '@/components/guardaLogo'
 
 export default function SignInPage() {
   return (
-    <div className="min-h-screen flex flex-col md:flex-row">
-      {/* ── Branding panel ── */}
+    <div className="h-screen overflow-hidden flex flex-col md:flex-row">
+
+      {/* ── Imagen + logo ── */}
       <div
-        className="relative flex items-center justify-center md:w-[45%] min-h-[220px] md:min-h-screen overflow-hidden"
+        className="relative flex items-center justify-center shrink-0 h-[38vh] md:h-full md:w-[45%] overflow-hidden"
         style={{
           backgroundImage: 'url(/images/villa-maria-1.jpg)',
           backgroundSize: 'cover',
@@ -16,51 +16,55 @@ export default function SignInPage() {
         }}
       >
         <div aria-hidden="true" className="absolute inset-0 bg-black/55" />
-
-        <div className="relative z-10 w-[50%] max-w-lg rounded-2xl bg-white/2 backdrop-blur-xs shadow-sm px-8 py-6">
+        <div className="relative z-10 w-[72%] md:w-[60%] max-w-xs md:max-w-sm rounded-2xl bg-white/5 backdrop-blur-sm px-6 py-4">
           <GuardaLogo className="w-full" />
         </div>
       </div>
 
-      {/* ── Auth panel ── */}
-      <div className="flex-1 flex fvlex-col justify-center items-center px-4 py-10 md:py-0 bg-background">
-        <Card className="w-full max-w-105 border-0 shadow-none bg-transparent ring-0">
-          <CardContent className="px-0 flex flex-col items-center gap-6">
-            {/* Header text above Clerk widget */}
-            {/* <div className="w-full text-center mb-1">
-              <h1 className="text-2xl font-bold tracking-tight text-foreground">
-                Iniciá sesión
-              </h1>
-              <p className="text-sm text-muted-foreground mt-1">
-                Accedé a tu cuenta para gestionar tus reportes
-              </p>
-            </div> */}
+      {/* ── Formulario ── */}
+      <div className="flex-1 min-h-0 overflow-y-auto flex flex-col justify-center py-8 md:py-0 bg-background">
+        <div className="w-full max-w-sm mx-auto md:max-w-md">
 
-            {/* Clerk embedded sign-in */}
-            <SignIn
-              routing="path"
-              path="/sign-in"
-              appearance={{
-                elements: {
-                  rootBox: 'w-full',
-                  card: 'shadow-none border-0 p-0 w-full',
-                },
-              }}
-            />
+          <h1 className="text-2xl font-bold tracking-tight text-foreground mb-6 px-6 md:px-8">
+            Iniciá sesión
+          </h1>
 
-            {/* Toggle link */}
-            <p className="text-sm text-muted-foreground text-center">
-              ¿No tenés cuenta?{' '}
-              <Link
-                to="/sign-up"
-                className="text-[oklch(0.45_0.18_255)] font-medium hover:underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[oklch(0.45_0.18_255)]"
-              >
-                Registrate
-              </Link>
-            </p>
-          </CardContent>
-        </Card>
+          <SignIn
+            routing="path"
+            path="/sign-in"
+            appearance={{
+              variables: {
+                fontSize: '16px',
+                spacingUnit: '15px',
+                borderRadius: '10px',
+              },
+              elements: {
+                rootBox: 'w-full',
+                cardBox: '!shadow-none !border-0 !bg-transparent w-full',
+                card: '!shadow-none !border-0 !bg-transparent w-full',
+                header: '!hidden',
+                footer: '!hidden',
+                formFieldLabel: '!hidden',
+                formButtonPrimary: '!h-14 !text-base !font-semibold !rounded-xl',
+                formFieldInput: '!h-14 !text-base !rounded-xl',
+                socialButtonsBlockButton: '!rounded-xl !h-14 !text-base',
+                dividerRow: 'my-1',
+              },
+            }}
+          />
+
+          <p className="mt-2 text-base text-muted-foreground text-center px-6 md:px-8">
+            ¿No tenés cuenta?{' '}
+            <Link
+              to="/sign-up"
+              className="font-semibold text-primary hover:underline underline-offset-4"
+            >
+              Registrate
+            </Link>
+          </p>
+        </div>
       </div>
+
     </div>
   )
 }

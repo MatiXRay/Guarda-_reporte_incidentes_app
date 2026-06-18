@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { AlertTriangle, ArrowRight, ClipboardList, MapPin, Pencil, Search } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { AlertTriangle, ChevronRight, ClipboardList, MapPin, Search } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { useReportes, type EstadoReporte } from '@/context/ReportesContext'
@@ -9,16 +8,16 @@ import { estadoBadgeStyles } from '@/lib/reportes-ui'
 import { cn } from '@/lib/utils'
 
 const estadoDot: Record<EstadoReporte, string> = {
-  Pendiente: 'bg-yellow-400',
+  Pendiente:     'bg-yellow-400',
   'En revisión': 'bg-primary',
-  Resuelto: 'bg-green-500',
+  Resuelto:      'bg-green-500',
 }
 
 type Filtro = 'Todos' | EstadoReporte
 const filtros: Filtro[] = ['Todos', 'Pendiente', 'En revisión', 'Resuelto']
 
 export default function MisReportesPage() {
-  const { reportes, loading, error, canEdit } = useReportes()
+  const { reportes, loading, error } = useReportes()
   const [filtro, setFiltro] = useState<Filtro>('Todos')
   const [busqueda, setBusqueda] = useState('')
 
@@ -39,20 +38,12 @@ export default function MisReportesPage() {
 
   return (
     <div className="flex flex-col gap-6">
+
       {/* Header */}
-      <header className="animate-fade-up flex items-center justify-between gap-4">
-        <div>
-          <h1 className="font-heading text-xl font-semibold tracking-tight text-foreground">
-            Mis reportes
-          </h1>
-          <p className="mt-0.5 text-sm text-muted-foreground">
-            Los reportes <span className="font-medium text-foreground">Pendientes</span> son editables.
-          </p>
-        </div>
-        {/* <Button size="sm" render={<Link to="/reportes/nuevo" />} className="shrink-0 bg-brand text-brand-foreground hover:bg-[oklch(0.62_0.14_60)]">
-          <PlusCircle className="size-3.5" aria-hidden />
-          Nuevo reporte
-        </Button> */}
+      <header className="animate-fade-up">
+        <h1 className="font-heading text-xl font-semibold tracking-tight text-foreground">
+          Mis reportes
+        </h1>
       </header>
 
       {/* Filtros */}
@@ -65,7 +56,7 @@ export default function MisReportesPage() {
             onChange={(e) => setBusqueda(e.target.value)}
             placeholder="Buscar reportes…"
             aria-label="Buscar reportes"
-            className="h-8 pl-8 text-sm"
+            className="h-9 pl-8 text-sm"
           />
         </div>
         <div role="tablist" aria-label="Filtrar por estado" className="flex flex-wrap items-center gap-1.5">
@@ -78,7 +69,7 @@ export default function MisReportesPage() {
                 aria-selected={active}
                 onClick={() => setFiltro(f)}
                 className={cn(
-                  'h-8 rounded-full border px-3 text-sm font-medium transition-colors outline-none',
+                  'h-9 rounded-full border px-3 text-sm font-medium transition-colors outline-none',
                   'focus-visible:ring-2 focus-visible:ring-ring/50',
                   active
                     ? 'border-primary bg-primary text-primary-foreground'
@@ -112,53 +103,36 @@ export default function MisReportesPage() {
           </Card>
         ) : (
           <ul className="flex flex-col gap-2">
-            {filtrados.map((reporte) => {
-              const editable = canEdit(reporte)
-              return (
-                <li key={reporte.id}>
-                  <Card className="border border-border shadow-sm transition-colors hover:bg-muted/30">
-                    <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
-                      {/* Fila superior: dot + contenido */}
-                      <div className="flex min-w-0 flex-1 items-center gap-3">
-                        <span className={cn('size-2 shrink-0 rounded-full', estadoDot[reporte.estado])} aria-hidden />
-                        <div className="min-w-0">
-                          <p className="text-base font-semibold text-foreground truncate">{reporte.titulo}</p>
-                          <p className="mt-0.5 text-sm text-muted-foreground">
-                            {reporte.categoria} · {reporte.fecha}
-                          </p>
-                          {reporte.ubicacion && (
-                            <div className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
-                              <MapPin className="size-3.5 shrink-0" aria-hidden />
-                              <span className="truncate">{reporte.ubicacion}</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
+            {filtrados.map((reporte) => (
+              <li key={reporte.id} className="overflow-hidden rounded-xl border border-border bg-background shadow-sm">
+                <Link
+                  to={`/reportes/${reporte.id}`}
+                  className="flex w-full items-center gap-3 px-4 py-4 transition-colors hover:bg-muted/40"
+                >
+                  <span className={cn('size-2 shrink-0 rounded-full', estadoDot[reporte.estado])} aria-hidden />
 
-                      {/* Acciones: en mobile debajo del contenido, en sm+ a la derecha */}
-                      <div className="flex shrink-0 items-center gap-2 pl-5 sm:pl-0">
-                        <span className={cn('whitespace-nowrap min-w-[84px] text-center rounded-md px-2.5 py-1 text-xs font-medium', estadoBadgeStyles[reporte.estado])}>
-                          {reporte.estado}
-                        </span>
-                        <Button variant="outline" size="sm" render={<Link to={`/reportes/${reporte.id}`} />} className="h-8 px-2.5 text-sm">
-                          Ver
-                          <ArrowRight className="size-3" aria-hidden />
-                        </Button>
-                        <Button
-                          size="sm"
-                          disabled={!editable}
-                          render={editable ? <Link to={`/reportes/${reporte.id}/editar`} /> : undefined}
-                          className="h-8 px-2.5 text-sm"
-                        >
-                          <Pencil className="size-3" aria-hidden />
-                          Editar
-                        </Button>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-base font-semibold text-foreground">{reporte.titulo}</p>
+                    <p className="mt-0.5 text-sm text-muted-foreground">
+                      {reporte.categoria} · {reporte.fecha}
+                    </p>
+                    {reporte.ubicacion && (
+                      <div className="mt-0.5 flex min-w-0 items-center gap-1 text-sm text-muted-foreground">
+                        <MapPin className="size-3.5 shrink-0" aria-hidden />
+                        <span className="truncate">{reporte.ubicacion}</span>
                       </div>
-                    </div>
-                  </Card>
-                </li>
-              )
-            })}
+                    )}
+                  </div>
+
+                  <div className="flex shrink-0 items-center gap-2">
+                    <span className={cn('whitespace-nowrap rounded-md px-2.5 py-1 text-xs font-medium', estadoBadgeStyles[reporte.estado])}>
+                      {reporte.estado}
+                    </span>
+                    <ChevronRight className="size-4 shrink-0 text-muted-foreground/50" aria-hidden />
+                  </div>
+                </Link>
+              </li>
+            ))}
           </ul>
         )}
       </section>
