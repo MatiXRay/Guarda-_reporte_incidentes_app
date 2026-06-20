@@ -189,6 +189,16 @@ export default function AdminReportesPage() {
   const [detalleId, setDetalleId] = useState<string | null>(null)
   const [detalleReporte, setDetalleReporte] = useState<Reporte | null>(null)
   const [detalleLoading, setDetalleLoading] = useState(false)
+
+  type HistorialEntryAdmin = {
+    _id: string
+    estadoAnterior: string
+    estadoNuevo: string
+    cambiadoPor: { nombre: string; role: string } | null
+    comentario: string | null
+    createdAt: string
+  }
+  const [historial, setHistorial] = useState<HistorialEntryAdmin[]>([])
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
 
   useEffect(() => {
@@ -259,15 +269,21 @@ export default function AdminReportesPage() {
     if (detalleId === id) {
       setDetalleId(null)
       setDetalleReporte(null)
+      setHistorial([])
       return
     }
     setDetalleId(id)
     setDetalleReporte(null)
+    setHistorial([])
     setDetalleLoading(true)
     try {
-      const res = await apiFetch(`${import.meta.env.VITE_API_URL}/api/reports/${id}`)
-      if (!res.ok) throw new Error()
-      setDetalleReporte(await res.json())
+      const [resDetalle, resHistorial] = await Promise.all([
+        apiFetch(`${import.meta.env.VITE_API_URL}/api/reports/${id}`),
+        apiFetch(`${import.meta.env.VITE_API_URL}/api/reports/${id}/historial`),
+      ])
+      if (!resDetalle.ok) throw new Error()
+      setDetalleReporte(await resDetalle.json())
+      if (resHistorial.ok) setHistorial(await resHistorial.json())
     } catch {
       setDetalleId(null)
     } finally {
@@ -751,6 +767,41 @@ export default function AdminReportesPage() {
                                 </div>
                               )
                             })}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Historial de estados */}
+                      {historial.length > 0 && (
+                        <div className="rounded-lg border border-border bg-background p-3">
+                          <p className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase mb-2">
+                            Historial de estados
+                          </p>
+                          <div className="flex flex-col gap-2.5">
+                            {historial.map((entry, i) => (
+                              <div key={entry._id ?? i} className="flex items-start gap-2.5">
+                                <span className={cn('mt-1 size-2 shrink-0 rounded-full', statusDot[entry.estadoNuevo as Status] ?? 'bg-muted-foreground')} aria-hidden />
+                                <div className="min-w-0">
+                                  <p className="text-xs font-medium text-foreground">
+                                    {statusLabel[entry.estadoAnterior as Status] ?? entry.estadoAnterior}
+                                    {' → '}
+                                    {statusLabel[entry.estadoNuevo as Status] ?? entry.estadoNuevo}
+                                  </p>
+                                  <p className="text-[11px] text-muted-foreground">
+                                    {new Intl.DateTimeFormat('es-AR', {
+                                      day: 'numeric', month: 'short', year: 'numeric',
+                                      hour: '2-digit', minute: '2-digit',
+                                    }).format(new Date(entry.createdAt))}
+                                    {entry.cambiadoPor && (
+                                      <> · {entry.cambiadoPor.nombre}</>
+                                    )}
+                                  </p>
+                                  {entry.comentario && (
+                                    <p className="mt-0.5 text-[11px] italic text-muted-foreground">{entry.comentario}</p>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
                           </div>
                         </div>
                       )}

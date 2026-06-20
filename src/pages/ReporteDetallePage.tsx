@@ -24,8 +24,22 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { useReportes } from '@/context/ReportesContext'
+import { apiFetch } from '@/lib/api'
 import { estadoBadgeStyles } from '@/lib/reportes-ui'
 import { cn } from '@/lib/utils'
+
+type HistorialEntry = {
+  estadoAnterior: string
+  estadoNuevo: string
+  fecha: string
+  comentario: string | null
+}
+
+const STATUS_LABEL: Record<string, string> = {
+  open: 'Pendiente',
+  in_progress: 'En revisión',
+  resolved: 'Resuelto',
+}
 
 export default function ReporteDetallePage() {
   const { id } = useParams<{ id: string }>()
@@ -33,6 +47,7 @@ export default function ReporteDetallePage() {
   const { getReporte, canEdit, deleteReporte } = useReportes()
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [historial, setHistorial] = useState<HistorialEntry[]>([])
   const [deleteError, setDeleteError] = useState<string | null>(null)
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
 
@@ -42,6 +57,14 @@ export default function ReporteDetallePage() {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [lightboxUrl])
+
+  useEffect(() => {
+    if (!id) return
+    apiFetch(`${import.meta.env.VITE_API_URL}/api/reports/${id}/historial`)
+      .then((r) => r.json())
+      .then((data: unknown) => setHistorial(Array.isArray(data) ? (data as HistorialEntry[]) : []))
+      .catch(() => setHistorial([]))
+  }, [id])
 
   const reporte = id ? getReporte(id) : undefined
   if (!reporte) return <Navigate to="/reportes" replace />
@@ -183,6 +206,34 @@ export default function ReporteDetallePage() {
                       </div>
                     )
                   })}
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Historial de estados */}
+          {historial.length > 0 && (
+            <>
+              <Separator className="my-5" />
+              <div>
+                <p className="mb-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                  Historial de estados
+                </p>
+                <div className="flex flex-col gap-3">
+                  {historial.map((entry, i) => (
+                    <div key={i} className="flex items-start gap-3">
+                      <span className="mt-1.5 size-2 shrink-0 rounded-full bg-primary" aria-hidden />
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-foreground">
+                          {STATUS_LABEL[entry.estadoAnterior]} → {STATUS_LABEL[entry.estadoNuevo]}
+                        </p>
+                        <p className="text-xs text-muted-foreground">{entry.fecha}</p>
+                        {entry.comentario && (
+                          <p className="mt-0.5 text-xs italic text-muted-foreground">{entry.comentario}</p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </>
