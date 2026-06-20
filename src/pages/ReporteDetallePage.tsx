@@ -97,7 +97,7 @@ export default function ReporteDetallePage() {
           <Separator className="my-5" />
 
           {/* Categoría y fecha */}
-          <div className="flex flex-col gap-4">
+          <div className="grid grid-cols-2 gap-4">
             <div className="flex items-center gap-3">
               <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground">
                 <Tag className="size-5" aria-hidden />

@@ -1,5 +1,5 @@
 import { useRef, useState, type ChangeEvent } from 'react'
-import { Camera, Images, X, Loader2, Film } from 'lucide-react'
+import { Camera, Images, X, Loader2, Film, Video } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as string
@@ -55,6 +55,7 @@ export function ImageUpload({ value, onChange }: Props) {
   const [error, setError] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const cameraRef = useRef<HTMLInputElement>(null)
+  const videoRef = useRef<HTMLInputElement>(null)
 
   const imageCount = value.filter((u) => !isVideoUrl(u)).length
   const hasVideo = value.some(isVideoUrl)
@@ -162,20 +163,37 @@ export function ImageUpload({ value, onChange }: Props) {
           </div>
         ) : (
           <div className="flex flex-col gap-2">
-            <div className="grid grid-cols-2 gap-2">
-              {/* Cámara — abre la cámara del dispositivo directamente */}
+            <div className="grid grid-cols-3 gap-2">
+              {/* Foto — cámara en modo foto */}
               <button
                 type="button"
                 onClick={() => cameraRef.current?.click()}
                 className={cn(
-                  'flex h-14 items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border',
-                  'text-sm font-medium text-muted-foreground transition-colors',
+                  'flex h-14 flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-border',
+                  'text-xs font-medium text-muted-foreground transition-colors',
                   'hover:border-primary hover:text-primary hover:bg-primary/5',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
                 )}
               >
                 <Camera className="size-5" aria-hidden />
-                Cámara
+                Foto
+              </button>
+
+              {/* Video — cámara en modo video */}
+              <button
+                type="button"
+                onClick={() => videoRef.current?.click()}
+                disabled={hasVideo}
+                className={cn(
+                  'flex h-14 flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-border',
+                  'text-xs font-medium text-muted-foreground transition-colors',
+                  'hover:border-primary hover:text-primary hover:bg-primary/5',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                  'disabled:cursor-not-allowed disabled:opacity-40'
+                )}
+              >
+                <Video className="size-5" aria-hidden />
+                Video
               </button>
 
               {/* Galería — abre el selector de archivos normal */}
@@ -183,8 +201,8 @@ export function ImageUpload({ value, onChange }: Props) {
                 type="button"
                 onClick={() => inputRef.current?.click()}
                 className={cn(
-                  'flex h-14 items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border',
-                  'text-sm font-medium text-muted-foreground transition-colors',
+                  'flex h-14 flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-border',
+                  'text-xs font-medium text-muted-foreground transition-colors',
                   'hover:border-primary hover:text-primary hover:bg-primary/5',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
                 )}
@@ -210,11 +228,21 @@ export function ImageUpload({ value, onChange }: Props) {
         onChange={handleFiles}
       />
 
-      {/* Input cámara: abre directamente la cámara trasera */}
+      {/* Input cámara: foto con cámara trasera */}
       <input
         ref={cameraRef}
         type="file"
         accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={handleFiles}
+      />
+
+      {/* Input video: grabación con cámara trasera */}
+      <input
+        ref={videoRef}
+        type="file"
+        accept="video/*"
         capture="environment"
         className="hidden"
         onChange={handleFiles}

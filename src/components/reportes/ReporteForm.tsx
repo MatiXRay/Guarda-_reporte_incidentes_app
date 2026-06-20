@@ -22,6 +22,7 @@ export type ReporteFormValues = {
   categoria: string
   descripcion: string
   address: string
+  barrio: string | null
   lat: number | null
   lng: number | null
   mediaUrls: string[]
@@ -50,6 +51,7 @@ const empty: ReporteFormValues = {
   categoria: CATEGORIAS[0],
   descripcion: '',
   address: '',
+  barrio: null,
   lat: null,
   lng: null,
   mediaUrls: [],
@@ -65,7 +67,7 @@ export function ReporteForm({ initialValues, submitLabel, submitIcon, onSubmit, 
   }
 
   function handleLocationPick(loc: PickedLocation) {
-    setValues((prev) => ({ ...prev, lat: loc.lat, lng: loc.lng, address: loc.address }))
+    setValues((prev) => ({ ...prev, lat: loc.lat, lng: loc.lng, address: loc.address, barrio: loc.barrio }))
     if (errors.address) setErrors((prev) => ({ ...prev, address: undefined }))
   }
 
@@ -86,6 +88,7 @@ export function ReporteForm({ initialValues, submitLabel, submitIcon, onSubmit, 
       categoria: values.categoria,
       descripcion: values.descripcion.trim(),
       address: values.address,
+      barrio: values.barrio,
       lat: values.lat,
       lng: values.lng,
       mediaUrls: values.mediaUrls,
@@ -140,7 +143,7 @@ export function ReporteForm({ initialValues, submitLabel, submitIcon, onSubmit, 
       {/* Ubicación */}
       <Field id="address" label="Ubicación" hint="Hacé clic en el mapa para marcar el lugar." error={errors.address}>
         <MapPicker
-          value={values.lat !== null && values.lng !== null ? { lat: values.lat, lng: values.lng, address: values.address } : null}
+          value={values.lat !== null && values.lng !== null ? { lat: values.lat, lng: values.lng, address: values.address, barrio: values.barrio } : null}
           onChange={handleLocationPick}
         />
         {values.address && (

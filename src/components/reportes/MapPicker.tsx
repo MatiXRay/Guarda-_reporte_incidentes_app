@@ -20,6 +20,7 @@ export type PickedLocation = {
   lat: number
   lng: number
   address: string
+  barrio: string | null
 }
 
 type Props = {
@@ -45,6 +46,10 @@ type NominatimAddress = {
   pedestrian?: string
   path?: string
   house_number?: string
+  suburb?: string
+  neighbourhood?: string
+  quarter?: string
+  city_district?: string
   city?: string
   town?: string
   village?: string
@@ -52,31 +57,39 @@ type NominatimAddress = {
   [key: string]: string | undefined
 }
 
+type GeocodeResult = { address: string; barrio: string | null }
+
+function extractBarrio(addr: NominatimAddress): string | null {
+  return addr.suburb ?? addr.neighbourhood ?? addr.quarter ?? addr.city_district ?? null
+}
+
 function formatNominatimAddress(addr: NominatimAddress): string {
   const road = addr.road ?? addr.pedestrian ?? addr.path ?? ''
   const number = addr.house_number ?? ''
+  const barrio = extractBarrio(addr)
   const city = addr.city ?? addr.town ?? addr.village ?? addr.municipality ?? ''
-  return [road, number, city].filter(Boolean).join(', ')
+  return [road, number, barrio, city].filter(Boolean).join(', ')
 }
 
-async function reverseGeocode(lat: number, lng: number): Promise<string> {
+async function reverseGeocode(lat: number, lng: number): Promise<GeocodeResult> {
   const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&addressdetails=1`
   try {
     const res = await fetch(url, { headers: { 'Accept-Language': 'es' } })
     const data = await res.json()
     if (data.address) {
-      const formatted = formatNominatimAddress(data.address)
-      if (formatted) return formatted
+      const address = formatNominatimAddress(data.address) || data.display_name || `${lat.toFixed(5)}, ${lng.toFixed(5)}`
+      const barrio = extractBarrio(data.address)
+      return { address, barrio }
     }
-    return data.display_name ?? `${lat.toFixed(5)}, ${lng.toFixed(5)}`
+    return { address: data.display_name ?? `${lat.toFixed(5)}, ${lng.toFixed(5)}`, barrio: null }
   } catch {
-    return `${lat.toFixed(5)}, ${lng.toFixed(5)}`
+    return { address: `${lat.toFixed(5)}, ${lng.toFixed(5)}`, barrio: null }
   }
 }
 
 async function geocodeAddress(
   query: string
-): Promise<{ lat: number; lng: number; display_name: string } | null> {
+): Promise<{ lat: number; lng: number; address: string; barrio: string | null } | null> {
   const params = new URLSearchParams({
     format: 'jsonv2',
     q: `${query}, Villa María, Córdoba, Argentina`,
@@ -92,12 +105,9 @@ async function geocodeAddress(
     const data = await res.json()
     if (!data.length) return null
     const addr = data[0].address as NominatimAddress | undefined
-    const formatted = addr ? formatNominatimAddress(addr) : ''
-    return {
-      lat: parseFloat(data[0].lat),
-      lng: parseFloat(data[0].lon),
-      display_name: formatted || (data[0].display_name as string),
-    }
+    const address = addr ? formatNominatimAddress(addr) : (data[0].display_name as string)
+    const barrio = addr ? extractBarrio(addr) : null
+    return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon), address, barrio }
   } catch {
     return null
   }
@@ -117,8 +127,8 @@ function ClickHandler({ onChange }: { onChange: (loc: PickedLocation) => void })
   useMapEvents({
     async click(e) {
       const { lat, lng } = e.latlng
-      const address = await reverseGeocode(lat, lng)
-      onChange({ lat, lng, address })
+      const { address, barrio } = await reverseGeocode(lat, lng)
+      onChange({ lat, lng, address, barrio })
     },
   })
   return null
@@ -143,7 +153,7 @@ export function MapPicker({ value, onChange }: Props) {
       return
     }
     setFlyTarget({ lat: result.lat, lng: result.lng })
-    onChange({ lat: result.lat, lng: result.lng, address: result.display_name })
+    onChange({ lat: result.lat, lng: result.lng, address: result.address, barrio: result.barrio })
   }
 
   function handleLocateMe() {
@@ -160,9 +170,9 @@ export function MapPicker({ value, onChange }: Props) {
     navigator.geolocation.getCurrentPosition(
       async ({ coords }) => {
         const { latitude: lat, longitude: lng } = coords
-        const address = await reverseGeocode(lat, lng)
+        const { address, barrio } = await reverseGeocode(lat, lng)
         setFlyTarget({ lat, lng })
-        onChange({ lat, lng, address })
+        onChange({ lat, lng, address, barrio })
         setLocating(false)
       },
       (err) => {

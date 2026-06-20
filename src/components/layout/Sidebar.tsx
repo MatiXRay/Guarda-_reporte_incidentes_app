@@ -41,6 +41,12 @@ const reportesSubNav: NavItem[] = [
   { label: 'Nuevo Reporte', icon: PlusCircle, to: '/reportes/nuevo' },
 ]
 
+const adminReportesSubNav: NavItem[] = [
+  { label: 'Mi resumen', icon: LayoutDashboard, to: '/reportes/resumen', end: true },
+  { label: 'Mis Reportes', icon: ClipboardList, to: '/reportes', end: true },
+  { label: 'Nuevo Reporte', icon: PlusCircle, to: '/reportes/nuevo' },
+]
+
 const adminNav: NavItem[] = [
   { label: 'Panel de reportes', icon: LayoutDashboard, to: '/admin/reportes', end: true },
 ]
@@ -81,7 +87,7 @@ function SidebarLink({ item }: { item: NavItem }) {
   )
 }
 
-function ReportesSection() {
+function ReportesSection({ subNav }: { subNav: NavItem[] }) {
   const location = useLocation()
   const isInReportes = location.pathname.startsWith('/reportes')
   const [open, setOpen] = useState(isInReportes)
@@ -119,8 +125,8 @@ function ReportesSection() {
 
       {open && (
         <ul className="mt-1 flex flex-col gap-1 pl-5">
-          {reportesSubNav.map((item) => (
-            <li key={item.label}>
+          {subNav.map((item) => (
+            <li key={item.to}>
               <SidebarLink item={item} />
             </li>
           ))}
@@ -145,7 +151,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
         <li>
           <SidebarLink item={{ label: 'Inicio', icon: Home, to: '/dashboard', end: true }} />
         </li>
-        <ReportesSection />
+        <ReportesSection subNav={isAdmin ? adminReportesSubNav : reportesSubNav} />
         <li>
           <SidebarLink item={{ label: 'Mapa', icon: Map, to: '/mapa' }} />
         </li>

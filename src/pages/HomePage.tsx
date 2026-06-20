@@ -2,14 +2,11 @@ import { useUser } from '@clerk/clerk-react'
 import { Link } from 'react-router-dom'
 import {
   ArrowRight,
-  CheckCircle2,
   ChevronRight,
-  Clock,
-  FileText,
   MapPin,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { useReportes, type EstadoReporte } from '@/context/ReportesContext'
 import { estadoBadgeStyles } from '@/lib/reportes-ui'
 import { cn } from '@/lib/utils'
@@ -50,9 +47,9 @@ export default function HomePage() {
   const ultimos    = reportes.slice(0, 4)
 
   const resumen = [
-    { label: 'Reportes enviados', value: total,      description: 'Total histórico',               icon: FileText,     tone: 'primary' as const },
-    { label: 'En revisión',       value: enRevision, description: 'El equipo los está atendiendo', icon: Clock,        tone: 'brand'   as const },
-    { label: 'Resueltos',         value: resueltos,  description: 'Gracias por colaborar',          icon: CheckCircle2, tone: 'success' as const },
+    { label: 'Reportes enviados', value: total,      description: 'Total histórico',               tone: 'primary' as const },
+    { label: 'En revisión',       value: enRevision, description: 'El equipo los está atendiendo', tone: 'brand'   as const },
+    { label: 'Resueltos',         value: resueltos,  description: 'Gracias por colaborar',          tone: 'success' as const },
   ]
 
   return (
@@ -80,23 +77,17 @@ export default function HomePage() {
         <h2 className="mb-3 text-base font-semibold text-foreground">Resumen</h2>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           {resumen.map((item) => {
-            const Icon = item.icon
             const tone = toneStyles[item.tone]
             return (
               <Card key={item.label} className="border border-border shadow-none">
-                <CardHeader className="flex flex-row items-center justify-between gap-3 pb-3">
-                  <CardDescription className="text-base font-medium text-foreground/70">
-                    {item.label}
-                  </CardDescription>
-                  <span className={cn('grid size-10 shrink-0 place-items-center rounded-xl border', tone.bg, tone.fg, tone.border)}>
-                    <Icon className="size-5" aria-hidden />
-                  </span>
-                </CardHeader>
-                <CardContent className="pt-0 pb-5">
-                  <p className="font-heading text-4xl font-bold tracking-tight text-foreground">
-                    {item.value}
-                  </p>
-                  <p className="mt-1.5 text-sm text-muted-foreground">{item.description}</p>
+                <CardContent className="flex items-stretch gap-3 p-4">
+                  <div className="flex flex-1 flex-col justify-center gap-1">
+                    <p className="text-base font-semibold text-foreground">{item.label}</p>
+                    <p className="text-sm text-muted-foreground">{item.description}</p>
+                  </div>
+                  <div className={cn('flex min-w-[3.5rem] items-center justify-center rounded-xl border', tone.bg, tone.fg, tone.border)}>
+                    <p className="font-heading text-2xl font-bold tracking-tight">{item.value}</p>
+                  </div>
                 </CardContent>
               </Card>
             )
@@ -138,7 +129,14 @@ export default function HomePage() {
                     <span className={cn('size-2 shrink-0 rounded-full', estadoDot[reporte.estado])} aria-hidden />
 
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-base font-semibold text-foreground">{reporte.titulo}</p>
+                      <div className="flex min-w-0 items-center gap-2">
+                        <p className="truncate text-base font-semibold text-foreground">{reporte.titulo}</p>
+                        {reporte.esAdherido && (
+                          <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                            Adherido
+                          </span>
+                        )}
+                      </div>
                       <p className="mt-0.5 text-sm text-muted-foreground">
                         #{reporte.id.slice(0, 8).toUpperCase()} · {reporte.fecha}
                       </p>

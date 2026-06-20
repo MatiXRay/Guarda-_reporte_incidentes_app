@@ -36,7 +36,7 @@ interface Reporte {
   category: string
   status: Status
   priority: Priority
-  location: { lat: number; lng: number; address: string }
+  location: { lat: number; lng: number; address: string; barrio?: string | null }
   userId: { nombre: string; email: string } | null
   esPrincipal: boolean
   adhesiones: number
@@ -710,7 +710,9 @@ export default function AdminReportesPage() {
                             <p className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">DIRECCIÓN</p>
                             <div className="mt-1 flex items-start gap-1.5">
                               <MapPin className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
-                              <p className="text-sm text-foreground">{detalleReporte.location.address}</p>
+                              <div>
+                                <p className="text-sm text-foreground">{detalleReporte.location.address}</p>
+                              </div>
                             </div>
                           </div>
                         </div>

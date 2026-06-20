@@ -189,7 +189,14 @@ export default function MisReportesPage() {
                 >
                   <span className={cn('size-2 shrink-0 rounded-full', estadoDot[reporte.estado])} aria-hidden />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-base font-semibold text-foreground">{reporte.titulo}</p>
+                    <div className="flex min-w-0 items-center gap-2">
+                      <p className="truncate text-base font-semibold text-foreground">{reporte.titulo}</p>
+                      {reporte.esAdherido && (
+                        <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                          Adherido
+                        </span>
+                      )}
+                    </div>
                     <p className="mt-0.5 text-sm text-muted-foreground">
                       {reporte.categoria} · {reporte.fecha}
                     </p>

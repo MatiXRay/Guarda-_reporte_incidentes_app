@@ -17,6 +17,7 @@ export type Reporte = {
   titulo: string
   descripcion: string
   ubicacion: string
+  barrio: string | null
   categoria: string
   fecha: string
   estado: EstadoReporte
@@ -24,6 +25,7 @@ export type Reporte = {
   lat: number | null
   lng: number | null
   mediaUrls: string[]
+  esAdherido: boolean
 }
 
 export type ReporteSimilar = {
@@ -59,7 +61,7 @@ const STATUS_MAP: Record<string, EstadoReporte> = {
 }
 
 function backendToReporte(r: Record<string, unknown>): Reporte {
-  const location = r.location as { lat?: number; lng?: number; address?: string } | undefined
+  const location = r.location as { lat?: number; lng?: number; address?: string; barrio?: string | null } | undefined
   const createdAt = r.createdAt as string | undefined
   const d = createdAt ? new Date(createdAt) : new Date()
   const dd = String(d.getDate()).padStart(2, '0')
@@ -72,12 +74,14 @@ function backendToReporte(r: Record<string, unknown>): Reporte {
     descripcion: r.description as string,
     categoria: r.category as string,
     ubicacion: location?.address ?? '',
+    barrio: location?.barrio ?? null,
     lat: location?.lat ?? null,
     lng: location?.lng ?? null,
     fecha: `${dd}/${mm}/${d.getFullYear()}`,
     estado: STATUS_MAP[r.status as string] ?? 'Pendiente',
     autorId: (r.userId as string) ?? '',
     mediaUrls: imageUrls.length ? imageUrls : imageUrl ? [imageUrl] : [],
+    esAdherido: r.esPrincipal === false,
   }
 }
 
@@ -103,8 +107,9 @@ function parseApiError(res: Response, body: Record<string, unknown>): string {
   return (body.error as string) ?? `Error del servidor (${res.status})`
 }
 
-type CreateReporteData = Omit<Reporte, 'id' | 'fecha' | 'estado' | 'autorId' | 'ubicacion'> & {
+type CreateReporteData = Omit<Reporte, 'id' | 'fecha' | 'estado' | 'autorId' | 'ubicacion' | 'esAdherido' | 'barrio'> & {
   address: string
+  barrio?: string | null
   forzarCreacion?: boolean
 }
 
@@ -160,12 +165,12 @@ export function ReportesProvider({ children }: { children: ReactNode }) {
     [reportes]
   )
 
-  const createReporte = useCallback(async ({ address, forzarCreacion, ...data }: CreateReporteData): Promise<CreateReporteResult> => {
+  const createReporte = useCallback(async ({ address, barrio, forzarCreacion, ...data }: CreateReporteData): Promise<CreateReporteResult> => {
     const body = {
       title: data.titulo,
       description: data.descripcion,
       category: data.categoria,
-      location: { lat: data.lat, lng: data.lng, address },
+      location: { lat: data.lat, lng: data.lng, address, barrio: barrio ?? null },
       imageUrls: data.mediaUrls,
       forzarCreacion,
     }
