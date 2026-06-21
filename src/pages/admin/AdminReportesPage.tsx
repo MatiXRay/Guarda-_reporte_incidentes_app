@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { useSearchParams } from 'react-router-dom'
 import {
   AlertTriangle,
   ArrowUpDown,
@@ -76,23 +77,23 @@ const priorityLabel: Record<Priority, string> = {
 
 /* ------- estilos ------- */
 const statusStyles: Record<Status, string> = {
-  open: 'bg-[oklch(0.96_0.06_75)] text-[oklch(0.42_0.13_60)] ring-1 ring-[oklch(0.85_0.1_70)]',
-  in_progress: 'bg-primary/10 text-primary ring-1 ring-primary/20',
-  resolved: 'bg-[oklch(0.95_0.06_155)] text-[oklch(0.4_0.12_155)] ring-1 ring-[oklch(0.82_0.1_155)]',
+  open:        'bg-[oklch(0.96_0.06_75)] text-[oklch(0.42_0.13_60)]',
+  in_progress: 'bg-primary/10 text-primary',
+  resolved:    'bg-[oklch(0.95_0.06_155)] text-[oklch(0.4_0.12_155)]',
 }
 
 const priorityStyles: Record<Priority, string> = {
-  baja: 'bg-muted text-muted-foreground ring-1 ring-border',
-  media: 'bg-[oklch(0.96_0.06_75)] text-[oklch(0.42_0.13_60)] ring-1 ring-[oklch(0.85_0.1_70)]',
-  alta: 'bg-orange-100 text-orange-700 ring-1 ring-orange-200',
-  critica: 'bg-destructive/10 text-destructive ring-1 ring-destructive/20',
+  baja:    'bg-blue-100   text-blue-700',
+  media:   'bg-yellow-100 text-yellow-800',
+  alta:    'bg-orange-100 text-orange-700',
+  critica: 'bg-red-100    text-red-700',
 }
 
 const priorityDot: Record<Priority, string> = {
-  baja: 'bg-muted-foreground/40',
-  media: 'bg-yellow-400',
-  alta: 'bg-orange-500',
-  critica: 'bg-destructive',
+  baja:    'bg-blue-400',
+  media:   'bg-yellow-400',
+  alta:    'bg-orange-500',
+  critica: 'bg-red-500',
 }
 
 const statusDot: Record<Status, string> = {
@@ -184,6 +185,22 @@ export default function AdminReportesPage() {
     if (which === 'more') { setMoreRect(rect); setMoreOpen((v) => !v); setFilterOpen(false); setSortOpen(false) }
   }
 
+  /* auto-apertura desde URL ?detalle=:id */
+  const [searchParams] = useSearchParams()
+  const autoOpenedRef = useRef(false)
+
+  useEffect(() => {
+    const param = searchParams.get('detalle')
+    if (param && reportes.length > 0 && !autoOpenedRef.current) {
+      autoOpenedRef.current = true
+      cargarDetalle(param).then(() => {
+        setTimeout(() => {
+          document.getElementById(`reporte-${param}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }, 100)
+      })
+    }
+  }, [reportes, searchParams])
+
   /* detalle */
   const [updatingId, setUpdatingId] = useState<string | null>(null)
   const [detalleId, setDetalleId] = useState<string | null>(null)
@@ -234,7 +251,8 @@ export default function AdminReportesPage() {
           r.title.toLowerCase().includes(q) ||
           r.category.toLowerCase().includes(q) ||
           r.location.address.toLowerCase().includes(q) ||
-          (r.userId?.nombre.toLowerCase().includes(q) ?? false)
+          (r.userId?.nombre.toLowerCase().includes(q) ?? false) ||
+          r._id.slice(-8).toLowerCase().includes(q)
         )
       }
       return true
@@ -564,7 +582,7 @@ export default function AdminReportesPage() {
               const isOpen = detalleId === reporte._id
               const isLoading = detalleLoading && detalleId === reporte._id
               return (
-                <li key={reporte._id} className="overflow-hidden rounded-xl border border-border bg-background shadow-sm">
+                <li key={reporte._id} id={`reporte-${reporte._id}`} className="overflow-hidden rounded-xl border border-border bg-background shadow-sm">
                   {/* Fila clickeable */}
                   <button
                     onClick={() => cargarDetalle(reporte._id)}

@@ -26,10 +26,10 @@ export function Header({ onMenuClick }: HeaderProps) {
           <button
             type="button"
             onClick={onMenuClick}
-            className="rounded-md p-1.5 text-foreground/70 hover:bg-muted hover:text-foreground lg:hidden"
+            className="rounded-md p-2.5 text-foreground/70 hover:bg-muted hover:text-foreground lg:hidden"
             aria-label="Abrir menú"
           >
-            <Menu className="size-5" aria-hidden />
+            <Menu className="size-6" aria-hidden />
           </button>
 
           <Link

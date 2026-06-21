@@ -31,7 +31,8 @@ import { cn } from '@/lib/utils'
 type HistorialEntry = {
   estadoAnterior: string
   estadoNuevo: string
-  fecha: string
+  fecha?: string
+  createdAt?: string
   comentario: string | null
 }
 
@@ -109,7 +110,7 @@ export default function ReporteDetallePage() {
                 {reporte.estado}
               </Badge>
               <span className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                #{reporte.id}
+                #{reporte.id.slice(-8)}
               </span>
             </div>
             <h1 className="mt-3 font-heading text-2xl font-bold tracking-tight text-foreground">
@@ -227,7 +228,14 @@ export default function ReporteDetallePage() {
                         <p className="text-sm font-medium text-foreground">
                           {STATUS_LABEL[entry.estadoAnterior]} → {STATUS_LABEL[entry.estadoNuevo]}
                         </p>
-                        <p className="text-xs text-muted-foreground">{entry.fecha}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {entry.fecha ?? (entry.createdAt
+                            ? new Intl.DateTimeFormat('es-AR', {
+                                day: 'numeric', month: 'long', year: 'numeric',
+                                hour: '2-digit', minute: '2-digit',
+                              }).format(new Date(entry.createdAt))
+                            : null)}
+                        </p>
                         {entry.comentario && (
                           <p className="mt-0.5 text-xs italic text-muted-foreground">{entry.comentario}</p>
                         )}
