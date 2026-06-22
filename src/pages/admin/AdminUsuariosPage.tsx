@@ -485,7 +485,7 @@ export default function AdminUsuariosPage() {
                     </div>
                     <form onSubmit={handleAddAdmin} className="flex flex-col gap-3">
                         <div className="flex flex-col gap-1.5">
-                            <label className="text-sm font-medium text-foreground">Nombre</label>
+                            <label className="text-xs font-medium text-muted-foreground">Nombre</label>
                             <input
                                 required
                                 type="text"
@@ -496,7 +496,7 @@ export default function AdminUsuariosPage() {
                             />
                         </div>
                         <div className="flex flex-col gap-1.5">
-                            <label className="text-sm font-medium text-foreground">Email</label>
+                            <label className="text-xs font-medium text-muted-foreground">Email</label>
                             <input
                                 required
                                 type="email"
@@ -507,7 +507,7 @@ export default function AdminUsuariosPage() {
                             />
                         </div>
                         <div className="flex flex-col gap-1.5">
-                            <label className="text-sm font-medium text-foreground">Contraseña</label>
+                            <label className="text-xs font-medium text-muted-foreground">Contraseña</label>
                             <input
                                 required
                                 type="password"

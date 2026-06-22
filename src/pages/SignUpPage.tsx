@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import { SignUp } from '@clerk/clerk-react'
 import { Link } from 'react-router-dom'
 
@@ -15,6 +16,18 @@ const BENEFITS = [
 ]
 
 export default function SignUpPage() {
+  const formWrapperRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const wrapper = formWrapperRef.current
+    if (!wrapper) return
+    const apply = () => wrapper.querySelectorAll('form').forEach((f) => f.setAttribute('novalidate', ''))
+    apply()
+    const observer = new MutationObserver(apply)
+    observer.observe(wrapper, { childList: true, subtree: true })
+    return () => observer.disconnect()
+  }, [])
+
   return (
     <div className="h-screen overflow-hidden flex flex-col md:flex-row">
 
@@ -63,6 +76,7 @@ export default function SignUpPage() {
             Creá tu cuenta
           </h1>
 
+          <div ref={formWrapperRef}>
           <SignUp
             routing="path"
             path="/sign-up"
@@ -86,6 +100,7 @@ export default function SignUpPage() {
               },
             }}
           />
+          </div>
 
           <p className="mt-2 text-base text-muted-foreground text-center px-6 md:px-8">
             ¿Ya tenés cuenta?{' '}

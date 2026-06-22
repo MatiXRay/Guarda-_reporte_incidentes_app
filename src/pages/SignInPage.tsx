@@ -1,8 +1,21 @@
+import { useEffect, useRef } from 'react'
 import { SignIn } from '@clerk/clerk-react'
 import { Link } from 'react-router-dom'
 import { GuardaLogo } from '@/components/guardaLogo'
 
 export default function SignInPage() {
+  const formWrapperRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const wrapper = formWrapperRef.current
+    if (!wrapper) return
+    const apply = () => wrapper.querySelectorAll('form').forEach((f) => f.setAttribute('novalidate', ''))
+    apply()
+    const observer = new MutationObserver(apply)
+    observer.observe(wrapper, { childList: true, subtree: true })
+    return () => observer.disconnect()
+  }, [])
+
   return (
     <div className="h-screen overflow-hidden flex flex-col md:flex-row">
 
@@ -29,6 +42,7 @@ export default function SignInPage() {
             Iniciá sesión
           </h1>
 
+          <div ref={formWrapperRef}>
           <SignIn
             routing="path"
             path="/sign-in"
@@ -52,6 +66,7 @@ export default function SignInPage() {
               },
             }}
           />
+          </div>
 
           <p className="mt-2 text-base text-muted-foreground text-center px-6 md:px-8">
             ¿No tenés cuenta?{' '}

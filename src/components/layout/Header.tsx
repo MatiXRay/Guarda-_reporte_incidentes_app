@@ -1,7 +1,8 @@
 import { UserButton, useUser } from '@clerk/clerk-react'
-import { Plus, ShieldAlert, Menu } from 'lucide-react'
+import { Plus, ShieldAlert, Menu, Sun, Moon } from 'lucide-react'
 import { Link, useLocation } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
+import { useTheme } from '@/hooks/useTheme'
 
 type HeaderProps = {
   onMenuClick: () => void
@@ -10,6 +11,7 @@ type HeaderProps = {
 export function Header({ onMenuClick }: HeaderProps) {
   const { user } = useUser()
   const { pathname } = useLocation()
+  const { theme, toggle } = useTheme()
   const isDashboard = pathname === '/dashboard'
   const isNuevoReporte = pathname === '/reportes/nuevo'
   const displayName =
@@ -62,8 +64,22 @@ export function Header({ onMenuClick }: HeaderProps) {
             </Button>
           )}
 
+          <button
+            type="button"
+            onClick={toggle}
+            aria-label={theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+            className="flex size-9 items-center justify-center rounded-lg text-foreground/70 hover:bg-muted hover:text-foreground transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+          >
+            {theme === 'dark'
+              ? <Sun className="size-4" aria-hidden />
+              : <Moon className="size-4" aria-hidden />
+            }
+          </button>
+
           <div className="flex items-center gap-2">
             <UserButton
+              userProfileUrl="/configuracion"
+              userProfileMode="navigation"
               appearance={{
                 elements: { avatarBox: 'h-8 w-8 rounded-full' },
               }}

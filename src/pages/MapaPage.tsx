@@ -31,6 +31,7 @@ type CitizenReporte = {
   adhesiones: number
   location: { lat: number; lng: number; address: string }
   imageUrls: string[]
+  aiAnalysis?: { etiquetas2: string[] }
 }
 
 /* ── estilos ── */
@@ -42,17 +43,22 @@ const STATUS_STYLE: Record<string, string> = {
   in_progress: 'bg-primary/10 text-primary',
   resolved:    'bg-[oklch(0.95_0.06_155)] text-[oklch(0.4_0.12_155)]',
 }
-const CATEGORY_COLOR: Record<string, string> = {
-  'Calles':          '#f97316',
-  'Tránsito':        '#f97316',
-  'Alumbrado':       '#eab308',
-  'Higiene urbana':  '#22c55e',
-  'Espacios verdes': '#10b981',
-  'Otro':            '#8b5cf6',
+const IMPACT_COLOR = {
+  circulacion: '#f97316', // naranja
+  seguridad:   '#ef4444', // rojo
+  ambos:       '#a855f7', // violeta
 }
 
-function markerIcon(category: string) {
-  const color = CATEGORY_COLOR[category] ?? '#8b5cf6'
+function resolveImpactColor(etiquetas2: string[] = []): string {
+  const circ = etiquetas2.includes('impacto_circulacion')
+  const seg  = etiquetas2.includes('impacto_seguridad')
+  if (circ && seg) return IMPACT_COLOR.ambos
+  if (seg)         return IMPACT_COLOR.seguridad
+  return IMPACT_COLOR.circulacion
+}
+
+function markerIcon(etiquetas2: string[] = []) {
+  const color = resolveImpactColor(etiquetas2)
   return L.divIcon({
     className: '',
     html: `<div style="width:13px;height:13px;background:${color};border:2.5px solid white;border-radius:50%;box-shadow:0 1px 5px rgba(0,0,0,0.35)"></div>`,
@@ -176,7 +182,7 @@ export default function MapaPage() {
                 <Marker
                   key={r._id}
                   position={[r.location.lat, r.location.lng]}
-                  icon={markerIcon(r.category)}
+                  icon={markerIcon(r.aiAnalysis?.etiquetas2)}
                   eventHandlers={{ click: () => setSelected(r) }}
                 />
               ))}
@@ -210,14 +216,20 @@ export default function MapaPage() {
         {/* Leyenda ciudadano — overlay esquina inferior izquierda */}
         {!isAdmin && (
           <div className="absolute bottom-6 left-4 z-[1000] rounded-xl border border-border bg-background/90 p-3 shadow-lg backdrop-blur-sm">
-            <p className="mb-2 text-xs font-semibold text-foreground">Categorías</p>
+            <p className="mb-2 text-xs font-semibold text-foreground">Tipo de impacto</p>
             <div className="flex flex-col gap-1.5">
-              {Object.entries(CATEGORY_COLOR).map(([cat, color]) => (
-                <div key={cat} className="flex items-center gap-2">
-                  <span className="size-2.5 shrink-0 rounded-full border-2 border-white shadow-sm" style={{ background: color }} />
-                  <span className="text-xs text-muted-foreground">{cat}</span>
-                </div>
-              ))}
+              <div className="flex items-center gap-2">
+                <span className="size-2.5 shrink-0 rounded-full border-2 border-white shadow-sm" style={{ background: IMPACT_COLOR.circulacion }} />
+                <span className="text-xs text-muted-foreground">Circulación</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="size-2.5 shrink-0 rounded-full border-2 border-white shadow-sm" style={{ background: IMPACT_COLOR.seguridad }} />
+                <span className="text-xs text-muted-foreground">Seguridad</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="size-2.5 shrink-0 rounded-full border-2 border-white shadow-sm" style={{ background: IMPACT_COLOR.ambos }} />
+                <span className="text-xs text-muted-foreground">Ambos</span>
+              </div>
             </div>
           </div>
         )}
