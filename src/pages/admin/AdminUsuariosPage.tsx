@@ -95,9 +95,9 @@ export default function AdminUsuariosPage() {
         setAddLoading(true)
         setAddError(null)
         try {
-            const res = await apiFetch(`${import.meta.env.VITE_API_URL}/api/users`, {
+            const res = await apiFetch(`${import.meta.env.VITE_API_URL}/api/users/create-admin`, {
                 method: 'POST',
-                body: JSON.stringify({ nombre: addNombre, email: addEmail, password: addPassword, role: 'admin' }),
+                body: JSON.stringify({ nombre: addNombre, email: addEmail, password: addPassword }),
             })
             const body = await res.json().catch(() => ({}))
             if (!res.ok) throw new Error((body as { error?: string }).error ?? `Error ${res.status}`)
