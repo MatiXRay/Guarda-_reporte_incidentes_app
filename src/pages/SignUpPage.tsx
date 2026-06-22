@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { SignUp } from '@clerk/clerk-react'
 import { Link } from 'react-router-dom'
+import { useTheme } from '@/hooks/useTheme'
 
 const CHECK_ICON = (
   <svg viewBox="0 0 12 12" fill="none" stroke="white" strokeWidth="2"
@@ -16,6 +17,8 @@ const BENEFITS = [
 ]
 
 export default function SignUpPage() {
+  const { theme } = useTheme()
+  const isDark = theme === 'dark'
   const formWrapperRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -85,6 +88,13 @@ export default function SignUpPage() {
                 fontSize: '16px',
                 spacingUnit: '13px',
                 borderRadius: '10px',
+                ...(isDark && {
+                  colorNeutral: '#ffffff',
+                  colorText: '#fafafa',
+                  colorTextSecondary: '#a8a8a8',
+                  colorInputBackground: '#242424',
+                  colorInputText: '#fafafa',
+                }),
               },
               elements: {
                 rootBox: 'w-full',

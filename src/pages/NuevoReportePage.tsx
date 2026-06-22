@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link, useNavigate } from 'react-router-dom'
-import { AlertTriangle, ArrowLeft, PlusCircle, MapPin } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, PlusCircle, MapPin, ShieldX, Phone } from 'lucide-react'
 import { MapContainer, TileLayer, Marker } from 'react-leaflet'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -56,6 +56,7 @@ export default function NuevoReportePage() {
   const [duplicadoMsg, setDuplicadoMsg] = useState<string | null>(null)
   const [pendiente, setPendiente] = useState<PendienteState | null>(null)
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [rechazadoRazon, setRechazadoRazon] = useState<string | null>(null)
 
   async function handleSubmit(values: ReporteFormValues) {
     setSubmitting(true)
@@ -71,6 +72,11 @@ export default function NuevoReportePage() {
         lng: values.lng,
         mediaUrls: values.mediaUrls,
       })
+
+      if (result.tipo === 'rechazado') {
+        setRechazadoRazon(result.razon)
+        return
+      }
 
       if (result.tipo === 'duplicado') {
         setDuplicadoMsg(result.message)
@@ -177,6 +183,45 @@ export default function NuevoReportePage() {
           />
         </CardContent>
       </Card>
+
+      {/* Modal reporte rechazado por IA */}
+      {rechazadoRazon !== null && (() => {
+        const esEmergencia = /\b(100|101|107)\b/.test(rechazadoRazon)
+        return createPortal(
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+            <div className="flex w-full max-w-sm flex-col gap-5 rounded-xl border border-border bg-background p-6 shadow-xl">
+              <div className="flex flex-col items-center gap-3 text-center">
+                <span className={`flex size-14 items-center justify-center rounded-full ${esEmergencia ? 'bg-red-100 text-red-600' : 'bg-destructive/10 text-destructive'}`}>
+                  {esEmergencia
+                    ? <Phone className="size-7" aria-hidden />
+                    : <ShieldX className="size-7" aria-hidden />
+                  }
+                </span>
+                <div>
+                  <h2 className="font-heading text-base font-semibold text-foreground">
+                    {esEmergencia ? 'Llamá a emergencias' : 'Reporte no aceptado'}
+                  </h2>
+                  <p className="mt-1.5 text-sm text-muted-foreground">
+                    {rechazadoRazon || 'El reporte no cumple con los criterios de la plataforma.'}
+                  </p>
+                  {esEmergencia && (
+                    <p className="mt-3 text-xs text-muted-foreground">
+                      Una vez que la situación esté controlada, podés reportar los daños que quedaron en la vía pública.
+                    </p>
+                  )}
+                </div>
+              </div>
+              <Button
+                className={`h-11 w-full rounded-xl text-sm font-semibold ${esEmergencia ? 'bg-red-600 hover:bg-red-700 text-white' : ''}`}
+                onClick={() => setRechazadoRazon(null)}
+              >
+                Entendido
+              </Button>
+            </div>
+          </div>,
+          document.body
+        )
+      })()}
 
       {/* Modal duplicado */}
       {duplicadoMsg && createPortal(

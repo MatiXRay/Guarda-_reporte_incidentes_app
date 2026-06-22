@@ -2,8 +2,11 @@ import { useEffect, useRef } from 'react'
 import { SignIn } from '@clerk/clerk-react'
 import { Link } from 'react-router-dom'
 import { GuardaLogo } from '@/components/guardaLogo'
+import { useTheme } from '@/hooks/useTheme'
 
 export default function SignInPage() {
+  const { theme } = useTheme()
+  const isDark = theme === 'dark'
   const formWrapperRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -51,6 +54,13 @@ export default function SignInPage() {
                 fontSize: '16px',
                 spacingUnit: '15px',
                 borderRadius: '10px',
+                ...(isDark && {
+                  colorNeutral: '#ffffff',
+                  colorText: '#fafafa',
+                  colorTextSecondary: '#a8a8a8',
+                  colorInputBackground: '#242424',
+                  colorInputText: '#fafafa',
+                }),
               },
               elements: {
                 rootBox: 'w-full',

@@ -44,6 +44,7 @@ export type CreateReporteResult =
   | { tipo: 'creado'; reporte: Reporte }
   | { tipo: 'duplicado'; message: string }
   | { tipo: 'pendiente'; similares: ReporteSimilar[]; datosNormalizados: { title: string; description: string } }
+  | { tipo: 'rechazado'; razon: string }
 
 export const CATEGORIAS = [
   'Calles',
@@ -181,6 +182,10 @@ export function ReportesProvider({ children }: { children: ReactNode }) {
     })
 
     const resBody = await res.json().catch(() => ({})) as Record<string, unknown>
+
+    if (res.status === 422) {
+      return { tipo: 'rechazado', razon: (resBody.razon as string) ?? 'El reporte no pudo ser procesado.' }
+    }
 
     if (res.status === 409) {
       return { tipo: 'duplicado', message: (resBody.message as string) ?? 'Ya tenés un reporte similar en esta zona' }
