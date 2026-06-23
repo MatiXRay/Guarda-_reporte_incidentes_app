@@ -33,21 +33,21 @@ export default function SignUpPage() {
   }, [])
 
   return (
-    <div className="min-h-screen flex flex-col bg-background md:flex-row md:h-screen md:overflow-hidden">
+    <div className="h-screen overflow-hidden flex flex-col md:flex-row">
 
-      {/* ── Franja superior mobile / Panel imagen desktop ── */}
+      {/* ── Imagen + logo ── */}
       <div
-        className="sticky top-0 z-10 relative flex flex-col justify-center items-center md:items-start shrink-0 h-36 md:static md:h-full md:w-[45%] overflow-hidden text-white px-8 md:px-10"
+        className="relative flex flex-col justify-center items-center md:items-start shrink-0 h-36 md:h-full md:w-[45%] overflow-hidden text-white px-8 md:px-10"
         style={{ backgroundImage: 'url(/images/villa-maria-2.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }}
       >
         <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/55 to-black/40" />
 
-        {/* Mobile: logo completo */}
+        {/* Mobile */}
         <div className="relative z-10 w-fit md:hidden rounded-2xl bg-white/5 backdrop-blur-sm px-4 py-3">
           <GuardaLogo className="w-56" />
         </div>
 
-        {/* Desktop: branding completo */}
+        {/* Desktop */}
         <div className="relative z-10 hidden md:block">
           <div className="flex items-center gap-2 mb-3">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
@@ -73,8 +73,8 @@ export default function SignUpPage() {
         </div>
       </div>
 
-      {/* ── Formulario ── */}
-      <div className="flex-1 md:overflow-y-auto">
+      {/* ── Formulario (scrolleable) ── */}
+      <div className="flex-1 overflow-y-auto bg-background">
         <div className="flex flex-col justify-center min-h-full px-6 py-8">
           <div className="w-full max-w-sm mx-auto">
 
