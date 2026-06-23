@@ -67,14 +67,15 @@ export function GuardaLogo({ className }: { className?: string }) {
 
             <g className="g-text">
                 <text
-                    style={{ fontFamily: 'inherit', fontWeight: 500, fontSize: '80px', fill: '#FFFFFF' }}
+                    style={{ fontFamily: 'inherit', fontWeight: 500, fontSize: '80px', fill: 'currentColor' }}
                     x="300" y="195"
                     dominantBaseline="middle"
                 >
                     Guarda!
                 </text>
                 <text
-                    style={{ fontFamily: 'inherit', fontWeight: 400, fontSize: '22px', fill: 'rgba(255,255,255,0.65)', letterSpacing: '3px' }}
+                    style={{ fontFamily: 'inherit', fontWeight: 400, fontSize: '22px', fill: 'currentColor', letterSpacing: '3px' }}
+                    opacity="0.6"
                     x="302" y="260"
                 >
                     REPORTE CIUDADANO

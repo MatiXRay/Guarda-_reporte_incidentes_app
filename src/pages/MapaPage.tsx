@@ -3,13 +3,16 @@ import { createPortal } from 'react-dom'
 import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import 'leaflet.heat'
+import MapboxMap, { Source, Layer } from 'react-map-gl/mapbox'
+import 'mapbox-gl/dist/mapbox-gl.css'
+import type { LayerProps } from 'react-map-gl/mapbox'
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
 import markerIconPng from 'leaflet/dist/images/marker-icon.png'
 import markerShadow from 'leaflet/dist/images/marker-shadow.png'
 import { CalendarDays, MapPin, Users, X } from 'lucide-react'
 import { apiFetch } from '@/lib/api'
 import { useUserRole } from '@/context/UserRoleContext'
+import { useTheme } from '@/hooks/useTheme'
 import { cn } from '@/lib/utils'
 
 delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl
@@ -44,9 +47,9 @@ const STATUS_STYLE: Record<string, string> = {
   resolved:    'bg-[oklch(0.95_0.06_155)] text-[oklch(0.4_0.12_155)]',
 }
 const IMPACT_COLOR = {
-  circulacion: '#f97316', // naranja
-  seguridad:   '#ef4444', // rojo
-  ambos:       '#a855f7', // violeta
+  circulacion: '#f97316',
+  seguridad:   '#ef4444',
+  ambos:       '#a855f7',
 }
 
 function resolveImpactColor(etiquetas2: string[] = []): string {
@@ -74,22 +77,59 @@ const userLocationIcon = L.divIcon({
   iconAnchor: [8, 8],
 })
 
-/* ── componentes auxiliares ── */
-function HeatLayer({ points }: { points: HeatPoint[] }) {
-  const map = useMap()
-  useEffect(() => {
-    if (!points.length) return
-    const max = Math.max(...points.map((p) => p.score), 1)
-    const heat = L.heatLayer(
-      points.map((p) => [p.lat, p.lng, p.score]),
-      { radius: 30, blur: 20, maxZoom: 17, max }
-    )
-    heat.addTo(map)
-    return () => { heat.remove() }
-  }, [map, points])
-  return null
+/* ── mapa de calor admin (Mapbox GL) ── */
+function AdminHeatMap({ points }: { points: HeatPoint[] }) {
+  const { theme } = useTheme()
+  const mapStyle = theme === 'dark'
+    ? 'mapbox://styles/mapbox/dark-v11'
+    : 'mapbox://styles/mapbox/light-v11'
+
+  const maxScore = Math.max(...points.map((p) => p.score), 1)
+
+  const geojson: GeoJSON.FeatureCollection = {
+    type: 'FeatureCollection',
+    features: points.map((p) => ({
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: [p.lng, p.lat] },
+      properties: { weight: p.score / maxScore },
+    })),
+  }
+
+  const heatmapLayer: LayerProps = {
+    id: 'heatmap-layer',
+    type: 'heatmap',
+    paint: {
+      'heatmap-weight': ['interpolate', ['linear'], ['get', 'weight'], 0, 0, 1, 1],
+      'heatmap-intensity': ['interpolate', ['linear'], ['zoom'], 0, 1, 17, 4],
+      'heatmap-color': [
+        'interpolate', ['linear'], ['heatmap-density'],
+        0,   'rgba(0,0,0,0)',
+        0.2, '#2563eb',
+        0.4, '#fbbf24',
+        0.6, '#f97316',
+        0.8, '#dc2626',
+        1,   '#7f1d1d',
+      ],
+      'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 0, 4, 13, 30, 17, 55],
+      'heatmap-opacity': 0.85,
+    },
+  }
+
+  return (
+    <MapboxMap
+      mapboxAccessToken={import.meta.env.VITE_MAPBOX_TOKEN}
+      initialViewState={{ longitude: VILLA_MARIA[1], latitude: VILLA_MARIA[0], zoom: 13 }}
+      style={{ width: '100%', height: '100%' }}
+      mapStyle={mapStyle}
+    >
+      <Source id="heatmap-source" type="geojson" data={geojson}>
+        <Layer {...heatmapLayer} />
+      </Source>
+    </MapboxMap>
+  )
 }
 
+/* ── mapa ciudadano (Leaflet) ── */
 function MapCenterSetter({ lat, lng, zoom }: { lat: number; lng: number; zoom: number }) {
   const map = useMap()
   useEffect(() => { map.setView([lat, lng], zoom) }, [map, lat, lng, zoom])
@@ -101,14 +141,10 @@ export default function MapaPage() {
   const { role } = useUserRole()
   const isAdmin = role === 'admin' || role === 'superadmin'
 
-  /* admin — heatmap */
   const [heatPoints, setHeatPoints] = useState<HeatPoint[]>([])
-
-  /* ciudadano — markers */
   const [reportes, setReportes] = useState<CitizenReporte[]>([])
   const [userPos, setUserPos] = useState<[number, number] | null>(null)
   const [selected, setSelected] = useState<CitizenReporte | null>(null)
-
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -121,7 +157,6 @@ export default function MapaPage() {
       return
     }
 
-    /* ciudadano: pedir ubicación primero */
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const lat = pos.coords.latitude
@@ -134,7 +169,6 @@ export default function MapaPage() {
           .finally(() => setLoading(false))
       },
       () => {
-        /* ubicación denegada — muestra todos */
         apiFetch(`${import.meta.env.VITE_API_URL}/api/reports/mapa-ciudadano`)
           .then((r) => r.json())
           .then((d: unknown) => setReportes(Array.isArray(d) ? (d as CitizenReporte[]) : []))
@@ -159,25 +193,43 @@ export default function MapaPage() {
   return (
     <>
       <div className="relative isolate" style={{ height: MAP_HEIGHT }}>
-        <MapContainer
-          center={mapCenter}
-          zoom={mapZoom}
-          style={{ height: '100%', width: '100%' }}
-          scrollWheelZoom
-          zoomControl={false}
-        >
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
 
-          {isAdmin ? (
-            <HeatLayer points={heatPoints} />
-          ) : (
-            <>
-              {userPos && (
-                <Marker position={userPos} icon={userLocationIcon} />
-              )}
+        {isAdmin ? (
+          /* ── mapa de calor Mapbox ── */
+          <>
+            <AdminHeatMap points={heatPoints} />
+            <div className="absolute bottom-6 left-4 z-[1000] rounded-xl border border-border bg-background/90 p-3 shadow-lg backdrop-blur-sm">
+              <p className="mb-2 text-xs font-semibold text-foreground">Intensidad</p>
+              <div className="flex flex-col gap-1.5">
+                {[
+                  { color: 'bg-blue-500',   label: 'Baja' },
+                  { color: 'bg-yellow-400', label: 'Moderada' },
+                  { color: 'bg-orange-500', label: 'Alta' },
+                  { color: 'bg-red-700',    label: 'Crítica' },
+                ].map(({ color, label }) => (
+                  <div key={label} className="flex items-center gap-2">
+                    <span className={cn('size-2.5 shrink-0 rounded-full', color)} />
+                    <span className="text-xs text-muted-foreground">{label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        ) : (
+          /* ── mapa ciudadano Leaflet ── */
+          <>
+            <MapContainer
+              center={mapCenter}
+              zoom={mapZoom}
+              style={{ height: '100%', width: '100%' }}
+              scrollWheelZoom
+              zoomControl={false}
+            >
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+              {userPos && <Marker position={userPos} icon={userLocationIcon} />}
               {reportes.map((r) => (
                 <Marker
                   key={r._id}
@@ -186,63 +238,35 @@ export default function MapaPage() {
                   eventHandlers={{ click: () => setSelected(r) }}
                 />
               ))}
-              {userPos && (
-                <MapCenterSetter lat={userPos[0]} lng={userPos[1]} zoom={15} />
-              )}
-            </>
-          )}
-        </MapContainer>
+              {userPos && <MapCenterSetter lat={userPos[0]} lng={userPos[1]} zoom={15} />}
+            </MapContainer>
 
-        {/* Leyenda admin — overlay esquina inferior izquierda */}
-        {isAdmin && (
-          <div className="absolute bottom-6 left-4 z-[1000] rounded-xl border border-border bg-background/90 p-3 shadow-lg backdrop-blur-sm">
-            <p className="mb-2 text-xs font-semibold text-foreground">Intensidad</p>
-            <div className="flex flex-col gap-1.5">
-              {[
-                { color: 'bg-blue-400',   label: 'Baja' },
-                { color: 'bg-yellow-400', label: 'Moderada' },
-                { color: 'bg-orange-500', label: 'Alta' },
-                { color: 'bg-red-600',    label: 'Crítica' },
-              ].map(({ color, label }) => (
-                <div key={label} className="flex items-center gap-2">
-                  <span className={cn('size-2.5 shrink-0 rounded-full', color)} />
-                  <span className="text-xs text-muted-foreground">{label}</span>
+            <div className="absolute bottom-6 left-4 z-[1000] rounded-xl border border-border bg-background/90 p-3 shadow-lg backdrop-blur-sm">
+              <p className="mb-2 text-xs font-semibold text-foreground">Tipo de impacto</p>
+              <div className="flex flex-col gap-1.5">
+                <div className="flex items-center gap-2">
+                  <span className="size-2.5 shrink-0 rounded-full border-2 border-white shadow-sm" style={{ background: IMPACT_COLOR.circulacion }} />
+                  <span className="text-xs text-muted-foreground">Circulación</span>
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Leyenda ciudadano — overlay esquina inferior izquierda */}
-        {!isAdmin && (
-          <div className="absolute bottom-6 left-4 z-[1000] rounded-xl border border-border bg-background/90 p-3 shadow-lg backdrop-blur-sm">
-            <p className="mb-2 text-xs font-semibold text-foreground">Tipo de impacto</p>
-            <div className="flex flex-col gap-1.5">
-              <div className="flex items-center gap-2">
-                <span className="size-2.5 shrink-0 rounded-full border-2 border-white shadow-sm" style={{ background: IMPACT_COLOR.circulacion }} />
-                <span className="text-xs text-muted-foreground">Circulación</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="size-2.5 shrink-0 rounded-full border-2 border-white shadow-sm" style={{ background: IMPACT_COLOR.seguridad }} />
-                <span className="text-xs text-muted-foreground">Seguridad</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="size-2.5 shrink-0 rounded-full border-2 border-white shadow-sm" style={{ background: IMPACT_COLOR.ambos }} />
-                <span className="text-xs text-muted-foreground">Ambos</span>
+                <div className="flex items-center gap-2">
+                  <span className="size-2.5 shrink-0 rounded-full border-2 border-white shadow-sm" style={{ background: IMPACT_COLOR.seguridad }} />
+                  <span className="text-xs text-muted-foreground">Seguridad</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="size-2.5 shrink-0 rounded-full border-2 border-white shadow-sm" style={{ background: IMPACT_COLOR.ambos }} />
+                  <span className="text-xs text-muted-foreground">Ambos</span>
+                </div>
               </div>
             </div>
-          </div>
-        )}
 
-        {/* Info ciudadano — overlay esquina superior derecha */}
-        {!isAdmin && (
-          <div className="absolute right-4 top-4 z-[1000] max-w-[200px] rounded-xl border border-border bg-background/90 px-3 py-2 shadow-lg backdrop-blur-sm">
-            <p className="text-xs text-muted-foreground">
-              {userPos
-                ? `${reportes.length} reporte${reportes.length !== 1 ? 's' : ''} activo${reportes.length !== 1 ? 's' : ''} cerca tuyo`
-                : `${reportes.length} reporte${reportes.length !== 1 ? 's' : ''} activo${reportes.length !== 1 ? 's' : ''} en la ciudad`}
-            </p>
-          </div>
+            <div className="absolute right-4 top-4 z-[1000] max-w-[200px] rounded-xl border border-border bg-background/90 px-3 py-2 shadow-lg backdrop-blur-sm">
+              <p className="text-xs text-muted-foreground">
+                {userPos
+                  ? `${reportes.length} reporte${reportes.length !== 1 ? 's' : ''} activo${reportes.length !== 1 ? 's' : ''} cerca tuyo`
+                  : `${reportes.length} reporte${reportes.length !== 1 ? 's' : ''} activo${reportes.length !== 1 ? 's' : ''} en la ciudad`}
+              </p>
+            </div>
+          </>
         )}
       </div>
 
