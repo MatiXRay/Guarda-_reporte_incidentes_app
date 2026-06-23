@@ -24,40 +24,36 @@ export default function SignInPage() {
   }, [])
 
   return (
-    <div className="h-screen flex flex-col md:flex-row overflow-hidden">
+    <div className="min-h-screen flex flex-col bg-background md:flex-row md:h-screen md:overflow-hidden">
 
-      {/* ── Imagen + logo (solo desktop) ── */}
+      {/* ── Franja superior mobile / Panel imagen desktop ── */}
       <div
-        className="relative flex items-center justify-center shrink-0 h-[38vh] md:h-full md:w-[45%] overflow-hidden text-white"
-        style={{
-          backgroundImage: 'url(/images/villa-maria-1.jpg)',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-        }}
+        className="sticky top-0 z-10 relative flex items-center justify-center shrink-0 h-36 md:static md:h-full md:w-[45%] overflow-hidden text-white"
+        style={{ backgroundImage: 'url(/images/villa-maria-1.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }}
       >
         <div aria-hidden="true" className="absolute inset-0 bg-black/55" />
-        <div className="relative z-10 w-[60%] max-w-sm rounded-2xl bg-white/5 backdrop-blur-sm px-6 py-4">
-          <GuardaLogo className="w-full" />
+        <div className="relative z-10 w-fit md:w-[55%] rounded-2xl bg-white/5 backdrop-blur-sm px-4 py-3">
+          <GuardaLogo className="w-56 md:w-full" />
         </div>
       </div>
 
       {/* ── Formulario ── */}
-      <div className="flex-1 bg-background overflow-y-auto">
-        <div className="flex flex-col items-center justify-center min-h-full px-4 py-10">
-          <div className="w-full max-w-sm">
+      <div className="flex-1 md:overflow-y-auto">
+        <div className="flex flex-col justify-center min-h-full px-6 py-8">
+          <div className="w-full max-w-sm mx-auto">
 
             {isFactorStep && (
               <button
                 type="button"
                 onClick={() => navigate('/sign-in')}
-                className="flex items-center gap-1.5 mb-4 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                className="flex items-center gap-1.5 mb-5 text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
                 <ArrowLeft className="size-4" />
                 Volver
               </button>
             )}
 
-            <h1 className="text-2xl font-bold tracking-tight text-foreground mb-6">
+            <h1 className="text-2xl font-bold text-foreground mb-6 text-center">
               {isFactorStep ? 'Verificación' : 'Iniciá sesión'}
             </h1>
 
@@ -68,8 +64,8 @@ export default function SignInPage() {
                 appearance={{
                   variables: {
                     fontSize: '16px',
-                    spacingUnit: '15px',
-                    borderRadius: '10px',
+                    spacingUnit: '14px',
+                    borderRadius: '12px',
                     ...(isDark && {
                       colorNeutral: '#ffffff',
                       colorText: '#fafafa',
@@ -85,16 +81,17 @@ export default function SignInPage() {
                     header: '!hidden',
                     footer: '!hidden',
                     formFieldLabel: '!hidden',
-                    formButtonPrimary: '!h-14 !text-base !font-semibold !rounded-xl',
-                    formFieldInput: '!h-14 !text-base !rounded-xl',
-                    socialButtonsBlockButton: '!rounded-xl !h-14 !text-base',
-                    dividerRow: 'my-1',
+                    formButtonPrimary: '!h-12 !text-base !font-semibold !rounded-xl',
+                    formFieldInput: '!h-12 !text-base !rounded-xl',
+                    socialButtonsBlockButton: '!rounded-xl !h-12 !text-sm !w-full',
+                    socialButtonsBlockButtons: '!flex !flex-col !gap-2',
+                    dividerRow: 'my-2',
                   },
                 }}
               />
             </div>
 
-            <p className="mt-2 text-base text-muted-foreground">
+            <p className="mt-4 text-sm text-muted-foreground text-center">
               ¿No tenés cuenta?{' '}
               <Link to="/sign-up" className="font-semibold text-primary hover:underline underline-offset-4">
                 Registrate

@@ -33,51 +33,52 @@ export default function SignUpPage() {
   }, [])
 
   return (
-    <div className="h-screen flex flex-col md:flex-row overflow-hidden">
+    <div className="min-h-screen flex flex-col bg-background md:flex-row md:h-screen md:overflow-hidden">
 
-      {/* ── Imagen + branding (solo desktop) ── */}
+      {/* ── Franja superior mobile / Panel imagen desktop ── */}
       <div
-        className="relative flex flex-col justify-center items-center md:items-start gap-5 px-8 md:px-10 shrink-0 h-[26vh] md:h-full md:w-[45%] overflow-hidden text-white"
-        style={{
-          backgroundImage: 'url(/images/villa-maria-2.jpg)',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-        }}
+        className="sticky top-0 z-10 relative flex flex-col justify-center items-center md:items-start shrink-0 h-36 md:static md:h-full md:w-[45%] overflow-hidden text-white px-8 md:px-10"
+        style={{ backgroundImage: 'url(/images/villa-maria-2.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }}
       >
         <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/55 to-black/40" />
 
-        <div className="relative z-10">
-          <div className="flex items-center gap-2 mb-2">
-            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-              strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+        {/* Mobile: logo completo */}
+        <div className="relative z-10 w-fit md:hidden rounded-2xl bg-white/5 backdrop-blur-sm px-4 py-3">
+          <GuardaLogo className="w-56" />
+        </div>
+
+        {/* Desktop: branding completo */}
+        <div className="relative z-10 hidden md:block">
+          <div className="flex items-center gap-2 mb-3">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+              strokeLinecap="round" strokeLinejoin="round"
               className="w-8 h-8 text-[oklch(0.85_0.2_60)]">
               <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
             </svg>
-            <span className="text-3xl font-bold tracking-tight">Guarda!</span>
+            <span className="text-3xl font-bold">Guarda!</span>
           </div>
-          <p className="text-sm text-white/70 max-w-[22ch]">
+          <p className="text-sm text-white/70 mb-6 max-w-[22ch]">
             Sumate a la comunidad y ayudá a mejorar tu ciudad.
           </p>
+          <ul className="flex flex-col gap-3">
+            {BENEFITS.map((b) => (
+              <li key={b} className="flex items-center gap-2.5 text-sm text-white/80">
+                <span className="flex-shrink-0 w-4 h-4 rounded-full bg-[oklch(0.75_0.2_50)] flex items-center justify-center">
+                  {CHECK_ICON}
+                </span>
+                {b}
+              </li>
+            ))}
+          </ul>
         </div>
-
-        <ul className="relative z-10 flex flex-col gap-3">
-          {BENEFITS.map((b) => (
-            <li key={b} className="flex items-center gap-2.5 text-sm text-white/80">
-              <span className="flex-shrink-0 w-4 h-4 rounded-full bg-[oklch(0.75_0.2_50)] flex items-center justify-center">
-                {CHECK_ICON}
-              </span>
-              {b}
-            </li>
-          ))}
-        </ul>
       </div>
 
       {/* ── Formulario ── */}
-      <div className="flex-1 bg-background overflow-y-auto">
-        <div className="flex flex-col items-center justify-center min-h-full px-4 py-10">
-          <div className="w-full max-w-sm">
+      <div className="flex-1 md:overflow-y-auto">
+        <div className="flex flex-col justify-center min-h-full px-6 py-8">
+          <div className="w-full max-w-sm mx-auto">
 
-            <h1 className="text-2xl font-bold tracking-tight text-foreground mb-6">
+            <h1 className="text-2xl font-bold text-foreground mb-6 text-center">
               Creá tu cuenta
             </h1>
 
@@ -88,8 +89,8 @@ export default function SignUpPage() {
                 appearance={{
                   variables: {
                     fontSize: '16px',
-                    spacingUnit: '13px',
-                    borderRadius: '10px',
+                    spacingUnit: '14px',
+                    borderRadius: '12px',
                     ...(isDark && {
                       colorNeutral: '#ffffff',
                       colorText: '#fafafa',
@@ -105,16 +106,17 @@ export default function SignUpPage() {
                     header: '!hidden',
                     footer: '!hidden',
                     formFieldLabel: '!hidden',
-                    formButtonPrimary: '!h-14 !text-base !font-semibold !rounded-xl',
-                    formFieldInput: '!h-14 !text-base !rounded-xl',
-                    socialButtonsBlockButton: '!rounded-xl !h-14 !text-base',
-                    dividerRow: 'my-1',
+                    formButtonPrimary: '!h-12 !text-base !font-semibold !rounded-xl',
+                    formFieldInput: '!h-12 !text-base !rounded-xl',
+                    socialButtonsBlockButton: '!rounded-xl !h-12 !text-sm !w-full',
+                    socialButtonsBlockButtons: '!flex !flex-col !gap-2',
+                    dividerRow: 'my-2',
                   },
                 }}
               />
             </div>
 
-            <p className="mt-2 text-base text-muted-foreground">
+            <p className="mt-4 text-sm text-muted-foreground text-center">
               ¿Ya tenés cuenta?{' '}
               <Link to="/sign-in" className="font-semibold text-primary hover:underline underline-offset-4">
                 Iniciá sesión

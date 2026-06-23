@@ -1,8 +1,9 @@
-export function GuardaLogo({ className }: { className?: string }) {
+export function GuardaLogo({ className, textOnly, iconOnly }: { className?: string; textOnly?: boolean; iconOnly?: boolean }) {
+    const viewBox = iconOnly ? '95 110 210 145' : textOnly ? '288 148 400 130' : '70 0 610 400'
     return (
         <svg
             className={className}
-            viewBox="70 0 610 400"
+            viewBox={viewBox}
             xmlns="http://www.w3.org/2000/svg"
         >
             <defs>
