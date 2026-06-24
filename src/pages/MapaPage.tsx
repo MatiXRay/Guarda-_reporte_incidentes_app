@@ -208,7 +208,7 @@ export default function MapaPage() {
         const lat = pos.coords.latitude
         const lng = pos.coords.longitude
         setUserPos([lat, lng])
-        apiFetch(`${import.meta.env.VITE_API_URL}/api/reports/mapa-ciudadano?lat=${lat}&lng=${lng}&radius=2000`)
+        apiFetch(`${import.meta.env.VITE_API_URL}/api/reports/mapa-ciudadano?lat=${lat}&lng=${lng}`)
           .then((r) => r.json())
           .then((d: unknown) => setReportes(Array.isArray(d) ? (d as CitizenReporte[]) : []))
           .catch(() => setReportes([]))
