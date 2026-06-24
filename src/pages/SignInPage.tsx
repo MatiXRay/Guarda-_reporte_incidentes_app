@@ -8,9 +8,9 @@ import { useTheme } from '@/hooks/useTheme'
 export default function SignInPage() {
   const { theme } = useTheme()
   const isDark = theme === 'dark'
-  const { pathname } = useLocation()
+  const { hash } = useLocation()
   const navigate = useNavigate()
-  const isFactorStep = pathname.includes('factor')
+  const isFactorStep = hash.includes('factor')
   const formWrapperRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -59,8 +59,7 @@ export default function SignInPage() {
 
             <div ref={formWrapperRef}>
               <SignIn
-                routing="path"
-                path="/sign-in"
+                routing="hash"
                 appearance={{
                   variables: {
                     fontSize: '16px',

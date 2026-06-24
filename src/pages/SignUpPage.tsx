@@ -84,8 +84,7 @@ export default function SignUpPage() {
 
             <div ref={formWrapperRef}>
               <SignUp
-                routing="path"
-                path="/sign-up"
+                routing="hash"
                 appearance={{
                   variables: {
                     fontSize: '16px',
