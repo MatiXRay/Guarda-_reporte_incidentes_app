@@ -60,7 +60,7 @@ export function Header({ onMenuClick }: HeaderProps) {
               className="h-10 rounded-xl bg-brand px-4 text-sm font-semibold text-brand-foreground hover:bg-[oklch(0.62_0.14_60)]"
             >
               <Plus className="size-4" aria-hidden />
-              Nuevo Reporte
+              Reporte
             </Button>
           )}
 
